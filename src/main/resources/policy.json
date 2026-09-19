@@ -1,0 +1,8 @@
+{ "version": 1, "default": "deny",
+  "protectedRoles": ["postgres", "pg_*", "orders_owner", "agent_*", "dba_*"],
+  "planAdmission": { "findingTypes": ["pg.excessive_privilege.owner_membership"], "targetMustEqualFindingSubject": true,
+    "maxGrants": 12, "allowedPrivileges": ["USAGE","SELECT","INSERT","UPDATE","DELETE","EXECUTE"],
+    "minHealthScenarios": 1, "requireGuards": ["completeness","justification","scenario_coverage","citation"] },
+  "approval": { "required": true, "approverPersonas": ["dba"], "separationOfDuties": true, "expiryMinutes": 15 },
+  "tools": { "apply_right_size_role": { "operationStates": ["APPROVED","FAILED_NOT_APPLIED"] },
+             "reopen_finding": { "findingStates": ["DRIFT_DETECTED"] } } }

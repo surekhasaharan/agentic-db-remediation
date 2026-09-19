@@ -1,0 +1,24 @@
+{ "agent": "analysis", "phase": "A", "captured": "authored",
+  "turns": [
+    { "when": "start",
+      "say": "orders_app holds the schema owner role. I will read its role graph, its direct grants and fourteen days of query telemetry to see what it actually uses.",
+      "calls": [
+        { "as": "role_graph", "tool": "read_role_graph", "args": { "role": "orders_app" } },
+        { "as": "grants", "tool": "read_grants", "args": { "role": "orders_app" } },
+        { "as": "telemetry", "tool": "read_query_telemetry", "args": { "role": "orders_app", "days": 14 } } ] },
+    { "when": "ok:read_query_telemetry",
+      "say": "The role has no direct grants; everything comes from the owner membership. Telemetry shows reads on customers, reads and writes on orders and order_items, and nothing else. I propose replacing the membership with seven explicit privileges.",
+      "decision": { "decision": "fix", "confidence": "medium",
+        "reason": "Replace the owner membership with the seven privileges observed in telemetry, plus USAGE on the schema.",
+        "retain_grants": [
+          { "privilege": "USAGE",  "kind": "schema", "object": "orders",             "evidence": ["$ev:telemetry"] },
+          { "privilege": "SELECT", "kind": "table",  "object": "orders.customers",   "evidence": ["$ev:telemetry"] },
+          { "privilege": "SELECT", "kind": "table",  "object": "orders.orders",      "evidence": ["$ev:telemetry"] },
+          { "privilege": "INSERT", "kind": "table",  "object": "orders.orders",      "evidence": ["$ev:telemetry"] },
+          { "privilege": "UPDATE", "kind": "table",  "object": "orders.orders",      "evidence": ["$ev:telemetry"] },
+          { "privilege": "SELECT", "kind": "table",  "object": "orders.order_items", "evidence": ["$ev:telemetry"] },
+          { "privilege": "INSERT", "kind": "table",  "object": "orders.order_items", "evidence": ["$ev:telemetry"] } ],
+        "health_scenarios": ["place_order", "read_order"],
+        "addressed_outcomes": [],
+        "unknowns": ["Telemetry covers fourteen days. Anything the role does less often than that would not appear."],
+        "evidence": ["$ev:role_graph", "$ev:grants", "$ev:telemetry"] } } ] }

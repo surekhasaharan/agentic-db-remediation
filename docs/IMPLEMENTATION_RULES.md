@@ -2,10 +2,18 @@
 
 ## Source of truth
 
-1. `DESIGN.md` is the authoritative product and technical specification.
-2. `IMPLEMENTATION_PLAN.md` is the approved execution plan.
-3. If they conflict, `DESIGN.md` takes precedence.
-4. The PRD and earlier production design are intentionally excluded and are not required.
+1. `DESIGN.md` is authoritative for the D0 product scope, system behavior, safety invariants, user experience, and architectural intent.
+2. `IMPLEMENTATION_PLAN.md` is authoritative for package structure, implementation sequencing, testing, and the explicitly approved resolutions listed at the beginning of the plan.
+3. The approved resolutions in `IMPLEMENTATION_PLAN.md` supersede any conflicting implementation details in `DESIGN.md`, including:
+   - The supervisor agent recommends reopening; the reopen-legality guard validates the decision before the workflow changes state. There is no agent-callable `reopen_finding` tool.
+   - `Lifecycle` lives in `adr.stores` beside `Findings`.
+   - The complete application is built and accepted locally before any Cloud Run deployment.
+   - Git commits remain local until GitHub publishing is explicitly approved.
+4. `IMPLEMENTATION_RULES.md` governs working practices, scope control, Git usage, deployment authorization, and external actions.
+5. The nine-step guided flow in `IMPLEMENTATION_PLAN.md` is authoritative. The PRD and earlier production design are intentionally excluded and are not required for D0 implementation.
+6. Do not infer additional requirements from references to the PRD or the production design.
+7. If the documents contain another material conflict affecting scope, safety, architecture, or reviewer experience, stop and ask before implementing that part.
+8. For minor implementation details not specified by these documents, choose the simplest solution consistent with the D0 invariants and record the assumption.
 
 ## Scope
 

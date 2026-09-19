@@ -1,0 +1,12 @@
+{
+  "label": "Platform record",
+  "id": "7d1f4c1e-9a1b-4c3e-8f2a-1b2c3d4e5f60",
+  "findingType": "pg.excessive_privilege.owner_membership",
+  "assetId": "orders-db-prod",
+  "subjectRole": "orders_app",
+  "ownerRole": "orders_owner",
+  "title": "orders_app is a member of orders_owner",
+  "description": "The application login role inherits every privilege of the schema owner, including the ability to create, drop and truncate tables. The application only needs to read and write a few tables.",
+  "criticality": "high",
+  "detectedDaysAgo": 3
+}

@@ -1,0 +1,14 @@
+{
+  "label": "Seeded demo telemetry",
+  "windowDays": 14,
+  "rows": [
+    { "role": "orders_app", "object": "orders.customers", "command": "SELECT", "calls": 48210, "lastSeenDaysAgo": 0 },
+    { "role": "orders_app", "object": "orders.orders", "command": "SELECT", "calls": 131877, "lastSeenDaysAgo": 0 },
+    { "role": "orders_app", "object": "orders.orders", "command": "INSERT", "calls": 22904, "lastSeenDaysAgo": 0 },
+    { "role": "orders_app", "object": "orders.orders", "command": "UPDATE", "calls": 19511, "lastSeenDaysAgo": 0 },
+    { "role": "orders_app", "object": "orders.order_items", "command": "SELECT", "calls": 96540, "lastSeenDaysAgo": 0 },
+    { "role": "orders_app", "object": "orders.order_items", "command": "INSERT", "calls": 41733, "lastSeenDaysAgo": 1 },
+    { "role": "dba_oncall", "object": "orders.orders", "command": "SELECT", "calls": 12, "lastSeenDaysAgo": 5 },
+    { "role": "dba_oncall", "object": "orders.ledger_archive", "command": "SELECT", "calls": 3, "lastSeenDaysAgo": 9 }
+  ]
+}

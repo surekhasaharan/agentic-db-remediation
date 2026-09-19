@@ -1,0 +1,8 @@
+{
+  "label": "Seeded demo telemetry",
+  "jobs": [
+    { "name": "month_end_close", "role": "orders_app", "schedule": "monthly, first business day", "calls": [ "orders.close_period(date)" ], "lastRunDaysAgo": 19, "lastStatus": "succeeded" },
+    { "name": "nightly_order_report", "role": "orders_app", "schedule": "daily 02:00", "calls": [ "orders.orders", "orders.order_items" ], "lastRunDaysAgo": 0, "lastStatus": "succeeded" },
+    { "name": "weekly_vacuum", "role": "dba_oncall", "schedule": "weekly", "calls": [ "orders" ], "lastRunDaysAgo": 2, "lastStatus": "succeeded" }
+  ]
+}

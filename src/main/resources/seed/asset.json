@@ -1,0 +1,10 @@
+{
+  "label": "Platform record",
+  "id": "orders-db-prod",
+  "name": "Orders database",
+  "application": "Orders service",
+  "team": "Commerce platform",
+  "piiLabel": true,
+  "environment": "production (demo)",
+  "engine": "PostgreSQL 16 (simulated)"
+}

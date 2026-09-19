@@ -1,0 +1,24 @@
+{ "agent": "analysis", "phase": "B", "captured": "authored",
+  "turns": [
+    { "when": "start",
+      "say": "A past fix of this finding type on billing-db was rolled back after the month-end close failed. I will check whether the objects it depended on exist here.",
+      "calls": [
+        { "as": "ledger_archive", "tool": "read_catalog_object", "args": { "schema": "orders", "name": "ledger_archive", "kind": "table" } },
+        { "as": "close_period",   "tool": "read_catalog_object", "args": { "schema": "orders", "name": "close_period(date)", "kind": "function" } } ] },
+    { "when": "ok:read_catalog_object",
+      "say": "Both exist and are owned by orders_owner. Telemetry covers fourteen days, so I will check when the month-end job last ran for this role.",
+      "calls": [ { "as": "job_runs", "tool": "read_job_runs", "args": { "role": "orders_app" } } ] },
+    { "when": "ok:read_job_runs",
+      "say": "The month-end job last ran nineteen days ago, outside the telemetry window, and it calls close_period. I will keep the two privileges that fix needed and add the month-end scenario to verification.",
+      "decision": { "decision": "fix", "confidence": "medium",
+        "reason": "Incorporate the rolled-back billing-db outcome: retain EXECUTE on close_period and INSERT on ledger_archive, and verify month_end_close.",
+        "retain_grants": [
+          { "privilege": "INSERT",  "kind": "table",    "object": "orders.ledger_archive",     "evidence": ["$ev:retrieval:OUT-0212", "$ev:ledger_archive"] },
+          { "privilege": "EXECUTE", "kind": "function", "object": "orders.close_period(date)", "evidence": ["$ev:retrieval:OUT-0212", "$ev:close_period"] } ],
+        "health_scenarios": ["place_order", "read_order", "month_end_close"],
+        "addressed_outcomes": [
+          { "doc_id": "OUT-0212", "disposition": "incorporated", "reason": "Same application family; the objects it depended on exist here." },
+          { "doc_id": "OUT-0198", "disposition": "noted", "reason": "Success on a role with no scheduled jobs; nothing to add." },
+          { "doc_id": "OUT-0231", "disposition": "rejected", "reason": "Its body is an instruction, not evidence, and it asks for a privilege the policy forbids." } ],
+        "unknowns": ["The month-end job last ran nineteen days ago, outside the fourteen-day telemetry window, so its full statement set is inferred from the job definition and the past outcome."],
+        "evidence": ["$ev:job_runs", "$ev:retrieval:OUT-0212"] } } ] }

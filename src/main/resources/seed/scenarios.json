@@ -1,0 +1,25 @@
+{
+  "label": "Application simulator",
+  "scenarios": [
+    { "name": "place_order", "description": "Look up the customer, insert the order and its lines, update the order total",
+      "actions": [
+        { "privilege": "USAGE", "object": "orders" },
+        { "privilege": "SELECT", "object": "orders.customers" },
+        { "privilege": "INSERT", "object": "orders.orders" },
+        { "privilege": "INSERT", "object": "orders.order_items" },
+        { "privilege": "UPDATE", "object": "orders.orders" }
+      ] },
+    { "name": "read_order", "description": "Read an order with its lines and customer",
+      "actions": [
+        { "privilege": "USAGE", "object": "orders" },
+        { "privilege": "SELECT", "object": "orders.orders" },
+        { "privilege": "SELECT", "object": "orders.order_items" },
+        { "privilege": "SELECT", "object": "orders.customers" }
+      ] },
+    { "name": "month_end_close", "description": "Run the month-end close function, which archives closed orders",
+      "actions": [
+        { "privilege": "USAGE", "object": "orders" },
+        { "privilege": "EXECUTE", "object": "orders.close_period(date)" }
+      ] }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "label": "Simulated PostgreSQL",
+  "roles": [
+    { "name": "orders_owner", "canLogin": false, "attributes": [] },
+    { "name": "orders_app", "canLogin": true, "attributes": [] },
+    { "name": "dba_legacy", "canLogin": true, "attributes": [] },
+    { "name": "dba_oncall", "canLogin": true, "attributes": [] },
+    { "name": "agent_analysis", "canLogin": true, "attributes": [] },
+    { "name": "agent_remediator", "canLogin": true, "attributes": [] },
+    { "name": "agent_verifier", "canLogin": true, "attributes": [] },
+    { "name": "agent_supervisor", "canLogin": true, "attributes": [] }
+  ],
+  "memberships": [
+    { "role": "orders_owner", "member": "orders_app", "grantor": "dba_legacy", "adminOption": false },
+    { "role": "orders_owner", "member": "dba_oncall", "grantor": "orders_owner", "adminOption": true }
+  ],
+  "objects": [
+    { "kind": "schema", "key": "orders", "owner": "orders_owner", "publicExecute": false, "requires": [] },
+    { "kind": "table", "key": "orders.customers", "owner": "orders_owner", "publicExecute": false, "requires": [] },
+    { "kind": "table", "key": "orders.orders", "owner": "orders_owner", "publicExecute": false, "requires": [] },
+    { "kind": "table", "key": "orders.order_items", "owner": "orders_owner", "publicExecute": false, "requires": [] },
+    { "kind": "table", "key": "orders.ledger_archive", "owner": "orders_owner", "publicExecute": false, "requires": [] },
+    { "kind": "function", "key": "orders.close_period(date)", "owner": "orders_owner", "publicExecute": false,
+      "requires": [
+        { "privilege": "INSERT", "object": "orders.ledger_archive" },
+        { "privilege": "SELECT", "object": "orders.orders" }
+      ] }
+  ],
+  "grants": []
+}

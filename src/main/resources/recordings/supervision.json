@@ -1,0 +1,11 @@
+{ "agent": "supervision", "phase": "main", "captured": "authored",
+  "turns": [
+    { "when": "start",
+      "say": "The sealed fingerprint for orders_app no longer matches. I will read the difference, who granted the new membership, and the role change log.",
+      "calls": [
+        { "as": "fingerprint", "tool": "read_control_fingerprint", "args": { "finding_ref": "$finding" } },
+        { "as": "grantor", "tool": "read_membership_grantor", "args": { "role": "orders_owner", "member": "orders_app" } },
+        { "as": "change_log", "tool": "read_role_change_log", "args": { "role": "orders_owner" } } ] },
+    { "when": "ok:read_role_change_log",
+      "say": "orders_app is a member of orders_owner again. The grantor is dba_oncall and the audit feed shows the grant against an on-call ticket, outside this system. That is drift, not an authorised change. I recommend reopening.",
+      "decision": { "decision": "reopen", "reason": "The owner membership was re-granted by dba_oncall outside the remediation system; no operation of this finding explains the change.", "evidence": ["$ev:fingerprint", "$ev:grantor", "$ev:change_log"] } } ] }

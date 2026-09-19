@@ -1,0 +1,7 @@
+{
+  "label": "Simulated audit feed",
+  "rows": [
+    { "daysAgo": 400, "actor": "dba_legacy", "action": "GRANT orders_owner TO orders_app", "reason": "Initial deployment shortcut", "ticket": "OPS-1188" },
+    { "daysAgo": 388, "actor": "orders_owner", "action": "GRANT orders_owner TO dba_oncall WITH ADMIN OPTION", "reason": "On-call access", "ticket": "OPS-1203" }
+  ]
+}

@@ -1,0 +1,612 @@
+{
+ "label": "Platform record",
+ "assets": [
+  {
+   "id": "asset-001",
+   "name": "orders-db-prod-1",
+   "application": "orders",
+   "environment": "prod",
+   "criticality": 2,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-002",
+   "name": "orders-db-prod-2",
+   "application": "orders",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-003",
+   "name": "orders-db-staging-1",
+   "application": "orders",
+   "environment": "staging",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-004",
+   "name": "orders-db-staging-2",
+   "application": "orders",
+   "environment": "staging",
+   "criticality": 1,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-005",
+   "name": "orders-db-dr-1",
+   "application": "orders",
+   "environment": "dr",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-006",
+   "name": "orders-db-dr-2",
+   "application": "orders",
+   "environment": "dr",
+   "criticality": 2,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-007",
+   "name": "billing-db-prod-1",
+   "application": "billing",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-008",
+   "name": "billing-db-prod-2",
+   "application": "billing",
+   "environment": "prod",
+   "criticality": 2,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-009",
+   "name": "billing-db-staging-1",
+   "application": "billing",
+   "environment": "staging",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-010",
+   "name": "billing-db-staging-2",
+   "application": "billing",
+   "environment": "staging",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-011",
+   "name": "billing-db-dr-1",
+   "application": "billing",
+   "environment": "dr",
+   "criticality": 2,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-012",
+   "name": "billing-db-dr-2",
+   "application": "billing",
+   "environment": "dr",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-013",
+   "name": "inventory-db-prod-1",
+   "application": "inventory",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-014",
+   "name": "inventory-db-prod-2",
+   "application": "inventory",
+   "environment": "prod",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-015",
+   "name": "inventory-db-staging-1",
+   "application": "inventory",
+   "environment": "staging",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-016",
+   "name": "inventory-db-staging-2",
+   "application": "inventory",
+   "environment": "staging",
+   "criticality": 2,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-017",
+   "name": "inventory-db-dr-1",
+   "application": "inventory",
+   "environment": "dr",
+   "criticality": 2,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-018",
+   "name": "inventory-db-dr-2",
+   "application": "inventory",
+   "environment": "dr",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-019",
+   "name": "catalog-db-prod-1",
+   "application": "catalog",
+   "environment": "prod",
+   "criticality": 5,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-020",
+   "name": "catalog-db-prod-2",
+   "application": "catalog",
+   "environment": "prod",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-021",
+   "name": "catalog-db-staging-1",
+   "application": "catalog",
+   "environment": "staging",
+   "criticality": 4,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-022",
+   "name": "catalog-db-staging-2",
+   "application": "catalog",
+   "environment": "staging",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-023",
+   "name": "catalog-db-dr-1",
+   "application": "catalog",
+   "environment": "dr",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-024",
+   "name": "catalog-db-dr-2",
+   "application": "catalog",
+   "environment": "dr",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-025",
+   "name": "shipping-db-prod-1",
+   "application": "shipping",
+   "environment": "prod",
+   "criticality": 4,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-026",
+   "name": "shipping-db-prod-2",
+   "application": "shipping",
+   "environment": "prod",
+   "criticality": 5,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-027",
+   "name": "shipping-db-staging-1",
+   "application": "shipping",
+   "environment": "staging",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-028",
+   "name": "shipping-db-staging-2",
+   "application": "shipping",
+   "environment": "staging",
+   "criticality": 2,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-029",
+   "name": "shipping-db-dr-1",
+   "application": "shipping",
+   "environment": "dr",
+   "criticality": 5,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-030",
+   "name": "shipping-db-dr-2",
+   "application": "shipping",
+   "environment": "dr",
+   "criticality": 5,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-031",
+   "name": "identity-db-prod-1",
+   "application": "identity",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-032",
+   "name": "identity-db-prod-2",
+   "application": "identity",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-033",
+   "name": "identity-db-staging-1",
+   "application": "identity",
+   "environment": "staging",
+   "criticality": 4,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-034",
+   "name": "identity-db-staging-2",
+   "application": "identity",
+   "environment": "staging",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-035",
+   "name": "identity-db-dr-1",
+   "application": "identity",
+   "environment": "dr",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-036",
+   "name": "identity-db-dr-2",
+   "application": "identity",
+   "environment": "dr",
+   "criticality": 2,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-037",
+   "name": "payments-db-prod-1",
+   "application": "payments",
+   "environment": "prod",
+   "criticality": 2,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-038",
+   "name": "payments-db-prod-2",
+   "application": "payments",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-039",
+   "name": "payments-db-staging-1",
+   "application": "payments",
+   "environment": "staging",
+   "criticality": 4,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-040",
+   "name": "payments-db-staging-2",
+   "application": "payments",
+   "environment": "staging",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-041",
+   "name": "payments-db-dr-1",
+   "application": "payments",
+   "environment": "dr",
+   "criticality": 5,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-042",
+   "name": "payments-db-dr-2",
+   "application": "payments",
+   "environment": "dr",
+   "criticality": 4,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-043",
+   "name": "reporting-db-prod-1",
+   "application": "reporting",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-044",
+   "name": "reporting-db-prod-2",
+   "application": "reporting",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-045",
+   "name": "reporting-db-staging-1",
+   "application": "reporting",
+   "environment": "staging",
+   "criticality": 1,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-046",
+   "name": "reporting-db-staging-2",
+   "application": "reporting",
+   "environment": "staging",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-047",
+   "name": "reporting-db-dr-1",
+   "application": "reporting",
+   "environment": "dr",
+   "criticality": 1,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-048",
+   "name": "reporting-db-dr-2",
+   "application": "reporting",
+   "environment": "dr",
+   "criticality": 4,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-049",
+   "name": "search-db-prod-1",
+   "application": "search",
+   "environment": "prod",
+   "criticality": 3,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-050",
+   "name": "search-db-prod-2",
+   "application": "search",
+   "environment": "prod",
+   "criticality": 5,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-051",
+   "name": "search-db-staging-1",
+   "application": "search",
+   "environment": "staging",
+   "criticality": 4,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-052",
+   "name": "search-db-staging-2",
+   "application": "search",
+   "environment": "staging",
+   "criticality": 4,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-053",
+   "name": "search-db-dr-1",
+   "application": "search",
+   "environment": "dr",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-054",
+   "name": "search-db-dr-2",
+   "application": "search",
+   "environment": "dr",
+   "criticality": 3,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-055",
+   "name": "notifications-db-prod-1",
+   "application": "notifications",
+   "environment": "prod",
+   "criticality": 1,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-056",
+   "name": "notifications-db-prod-2",
+   "application": "notifications",
+   "environment": "prod",
+   "criticality": 2,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-057",
+   "name": "notifications-db-staging-1",
+   "application": "notifications",
+   "environment": "staging",
+   "criticality": 2,
+   "piiLabel": true
+  },
+  {
+   "id": "asset-058",
+   "name": "notifications-db-staging-2",
+   "application": "notifications",
+   "environment": "staging",
+   "criticality": 5,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-059",
+   "name": "notifications-db-dr-1",
+   "application": "notifications",
+   "environment": "dr",
+   "criticality": 2,
+   "piiLabel": false
+  },
+  {
+   "id": "asset-060",
+   "name": "notifications-db-dr-2",
+   "application": "notifications",
+   "environment": "dr",
+   "criticality": 3,
+   "piiLabel": true
+  }
+ ],
+ "controls": [
+  {
+   "id": "ctl-01",
+   "name": "owner_membership",
+   "weight": 2
+  },
+  {
+   "id": "ctl-02",
+   "name": "superuser_role",
+   "weight": 5
+  },
+  {
+   "id": "ctl-03",
+   "name": "public_schema_create",
+   "weight": 3
+  },
+  {
+   "id": "ctl-04",
+   "name": "login_without_expiry",
+   "weight": 5
+  },
+  {
+   "id": "ctl-05",
+   "name": "password_in_url",
+   "weight": 3
+  },
+  {
+   "id": "ctl-06",
+   "name": "unencrypted_backup",
+   "weight": 5
+  },
+  {
+   "id": "ctl-07",
+   "name": "missing_row_security",
+   "weight": 2
+  },
+  {
+   "id": "ctl-08",
+   "name": "wide_grant_public",
+   "weight": 2
+  },
+  {
+   "id": "ctl-09",
+   "name": "stale_replication_slot",
+   "weight": 1
+  },
+  {
+   "id": "ctl-10",
+   "name": "untrusted_extension",
+   "weight": 2
+  },
+  {
+   "id": "ctl-11",
+   "name": "weak_auth_method",
+   "weight": 2
+  },
+  {
+   "id": "ctl-12",
+   "name": "audit_disabled",
+   "weight": 2
+  },
+  {
+   "id": "ctl-13",
+   "name": "ssl_off",
+   "weight": 2
+  },
+  {
+   "id": "ctl-14",
+   "name": "default_password",
+   "weight": 1
+  },
+  {
+   "id": "ctl-15",
+   "name": "excess_connection_limit",
+   "weight": 5
+  },
+  {
+   "id": "ctl-16",
+   "name": "unused_role",
+   "weight": 2
+  },
+  {
+   "id": "ctl-17",
+   "name": "cross_db_link",
+   "weight": 3
+  },
+  {
+   "id": "ctl-18",
+   "name": "shared_service_account",
+   "weight": 3
+  },
+  {
+   "id": "ctl-19",
+   "name": "world_readable_dump",
+   "weight": 1
+  },
+  {
+   "id": "ctl-20",
+   "name": "unpinned_extension",
+   "weight": 2
+  },
+  {
+   "id": "ctl-21",
+   "name": "open_pg_hba",
+   "weight": 5
+  },
+  {
+   "id": "ctl-22",
+   "name": "missing_backup",
+   "weight": 3
+  },
+  {
+   "id": "ctl-23",
+   "name": "long_running_txn",
+   "weight": 3
+  },
+  {
+   "id": "ctl-24",
+   "name": "broken_fk_index",
+   "weight": 2
+  },
+  {
+   "id": "ctl-25",
+   "name": "replica_lag",
+   "weight": 1
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{ "agent": "verification", "phase": "main", "captured": "authored",
+  "turns": [
+    { "when": "start",
+      "say": "I will read the privilege assertions, the negative probes and the application scenarios that were computed for this operation.",
+      "calls": [
+        { "as": "assertions", "tool": "assert_privileges", "args": { "finding_ref": "$finding" } },
+        { "as": "probe", "tool": "run_negative_probe", "args": { "role": "orders_app" } },
+        { "as": "health", "tool": "run_health_scenarios", "args": { "role": "orders_app", "scenarios": ["place_order", "read_order", "month_end_close"] } } ] },
+    { "when": "ok:run_health_scenarios",
+      "say": "Every assertion holds, both destructive probes were refused with 42501, and all three application scenarios pass, including month-end close.",
+      "decision": { "decision": "pass", "reason": "All stored checks passed: six assertions, two negative probes and three scenarios.", "evidence": ["$ev:assertions", "$ev:probe", "$ev:health"] } } ] }
