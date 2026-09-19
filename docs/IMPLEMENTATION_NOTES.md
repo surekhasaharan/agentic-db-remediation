@@ -23,6 +23,7 @@ Each one is small and deliberate. None changes an invariant.
 | 13 | The evidence export adds `target_mode: simulated` to each evidence item whose source label is the simulated target or the application simulator. | Evidence records themselves carry only a source label; the export is where the design asks for the field. |
 | 14 | The reopen marker `reopened_by_seq` records the sequence of the `REOPENED` transition event. | Its two companion events are the next two sequence numbers. |
 | 15 | `OutOfBandClient` lives in `adr.target` but takes the audit feed as a parameter; the chaos event is appended by the workflow. | Keeps the target package free of the app package. |
+| 16 | The policy is deny by default for tools: `evaluateTool` refuses any tool without an explicit entry, and `policy.json` lists every tool the demo permits, with state constraints where they apply. Start-up fails if a recording calls a tool the policy does not permit. | Review comment after local acceptance. An earlier version allowed unlisted tools implicitly, which contradicted `"default": "deny"`. Deterministic least privilege is the product's point. |
 
 ## Measurements
 

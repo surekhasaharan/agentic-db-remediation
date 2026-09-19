@@ -44,7 +44,7 @@ After step 9 the page hands over to an explore panel: inject faults, block write
 | --- | --- |
 | Tool allowlists and per-caller capabilities enforced by the target | Agent responses: hand-authored recordings selected turn by turn from live tool results |
 | Strict argument validation: missing, null and blank refused by name | The PostgreSQL target: an in-memory model of roles, memberships, grants, a transaction, a lock and a ledger |
-| Policy, plan lint, plan hash, approval binding, separation of duties, expiry | Sam and Dana: demo personas chosen in the page, never authenticated |
+| Policy with deny by default: every tool needs an explicit entry; plan lint, plan hash, approval binding, separation of duties, expiry | Sam and Dana: demo personas chosen in the page, never authenticated |
 | Completeness, justification, scenario coverage, citation, verdict and reopen guards | Telemetry, job history, audit feed, knowledge corpus and fleet grid: JSON resources per session |
 | Compare-and-set lease, atomic commit with its ledger marker, outcome classification, reconciliation | |
 | Verification assertions, negative probes and application scenarios against the privilege engine | |

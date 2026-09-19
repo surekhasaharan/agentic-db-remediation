@@ -29,6 +29,15 @@ public final class StartupChecks {
       for (RecordingValidator.Problem p : report.errors()) sb.append("  ").append(p).append('\n');
       throw new IllegalStateException(sb.toString());
     }
+    for (Recording r : recordings.values()) {
+      for (Recording.RawTurn t : r.turns()) {
+        if (!t.hasCalls()) continue;
+        for (Recording.RawCall c : t.calls()) {
+          if (!policy.permits(c.tool()))
+            throw new IllegalStateException("recording " + r.key() + " turn " + t.when() + " calls " + c.tool() + ", which the policy does not permit");
+        }
+      }
+    }
     String hash = RecordingValidator.hashOf(recordings);
     RecordedModelClient model = new RecordedModelClient(recordings);
     java.util.List<adr.workflow.GoldenFlow.Result> golden = adr.workflow.GoldenFlow.run(policy, model, seed);
