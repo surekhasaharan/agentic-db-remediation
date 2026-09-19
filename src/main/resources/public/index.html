@@ -7,8 +7,56 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <p id="banner"></p>
-  <ol id="timeline"></ol>
+  <header class="top">
+    <div class="banner" role="note">
+      <span id="banner-text"></span>
+      <button id="about-open" class="link" type="button">About this demo</button>
+    </div>
+    <div class="bar">
+      <div class="counters" id="counters" aria-live="polite"></div>
+      <div class="acting">
+        <span class="muted">Acting as</span>
+        <select id="persona" aria-label="Acting as persona"></select>
+        <span class="tag">demo persona, not authenticated</span>
+      </div>
+      <button id="reset" class="btn secondary" type="button" title="Available when the current stage finishes">Reset</button>
+    </div>
+  </header>
+
+  <div id="waking" class="overlay"><div class="overlay-card"><p>Waking the demo</p><p class="muted">The static page painted first; state is loading.</p></div></div>
+  <div id="gone" class="overlay hidden"><div class="overlay-card"><p id="gone-text">The demo restarted.</p><button id="again" class="btn" type="button">Start again</button></div></div>
+
+  <main class="layout">
+    <aside class="context" id="context"></aside>
+
+    <section class="centre">
+      <nav class="rail" id="rail" aria-label="Lifecycle stages"></nav>
+      <section class="focus" id="focus" aria-live="polite" aria-label="What is happening now"></section>
+      <details class="earlier hidden" id="earlier"><summary>Earlier in this session</summary><div id="earlier-list"></div></details>
+    </section>
+
+    <aside class="timeline" id="timeline-pane">
+      <div class="timeline-head">
+        <h2>Session timeline, in memory</h2>
+        <div class="filters" id="filters" role="group" aria-label="Timeline filters"></div>
+      </div>
+      <ol id="timeline" class="timeline-list"></ol>
+      <button id="new-events" class="pill hidden" type="button">New events</button>
+    </aside>
+  </main>
+
+  <div id="gauges" class="gauges hidden" aria-live="polite"></div>
+
+  <footer class="guide" id="guide"></footer>
+
+  <dialog id="about" class="sheet">
+    <form method="dialog">
+      <h2>About this demo</h2>
+      <div id="about-body"></div>
+      <button class="btn" type="submit">Close</button>
+    </form>
+  </dialog>
+
   <script src="/static/app.js"></script>
 </body>
 </html>
