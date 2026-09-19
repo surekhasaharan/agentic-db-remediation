@@ -353,7 +353,7 @@ None of these blocks implementation. Each is resolved below with an assumption t
 | --- | --- | --- | --- |
 | A1 | The design says verification results are computed before the verifier sees them, and also lists three verification tools in the verifier's allowlist | The workflow runs the three checks as system code and stores the results on the `REMEDIATING` to `VERIFYING` move. The verifier's recorded calls to the same tools return the stored results with fresh evidence IDs. The verdict guard reads the store. | Phase 5 |
 | A2 | The decision-legality guard names `proceed` and `reconcile`, but the runner ends a run on any decision | Remediation decisions are `applied` or `escalate`. `applied` is legal only when the operation is `APPLIED`. Pre-flight and reconciliation legality are broker preconditions on `apply_right_size_role` and `get_operation_status`. | Phase 5 |
-| A3 | The nine beats reference a PRD that is not in the repository | Reconstructed in section 3 | Phase 7 |
+| A3 | The nine beats reference a PRD that is not in the repository | Reconstructed in section 3. [IMPLEMENTATION_RULES.md](IMPLEMENTATION_RULES.md) states the PRD is intentionally excluded, so the reconstruction stands. | Phase 7 |
 | A4 | How one automatic run reads as several beats without timers | Observation steps with no command, plus a client-side reveal stagger in the focus panel only. Timeline delivery is immediate. | Phase 7 |
 | A5 | "6, 5, 6, 4, 4" step budgets for four agents | Analysis A 6, analysis B 5, remediation 6, verification 4, supervision 4 | Phase 4 |
 | A6 | `start_burst` has only `count`, but guided mode is paced | The HTTP command is always paced at about 400 per second; `BurstPipeline.run(count, paced)` lets tests run unpaced | Phase 8 |
