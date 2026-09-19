@@ -17,6 +17,9 @@ import adr.domain.Decision;
 import adr.domain.FindingState;
 import adr.domain.GrantSpec;
 import adr.domain.Labels;
+import adr.domain.OpState;
+import adr.domain.Operation;
+import adr.domain.OperationState;
 import adr.domain.Plan;
 import adr.domain.PlanExec;
 import adr.domain.TimelineEvent;
@@ -45,18 +48,23 @@ public final class Workflow {
   private final Policy policy;
   private final ToolBroker broker;
   private final AgentRunner runner;
+  private final ApprovalService approvals;
+  /** Test seam: runs before verification results are computed. Null in production. */
+  public volatile java.util.function.Consumer<Session> beforeVerificationHook;
 
   public Workflow(Executor runs, Policy policy, ModelClient model) {
     this.runs = runs;
     this.policy = policy;
     this.broker = new ToolBroker(policy);
     this.runner = new AgentRunner(model, broker);
+    this.approvals = new ApprovalService(policy);
   }
 
   public Executor runs() { return runs; }
   public Policy policy() { return policy; }
   public ToolBroker broker() { return broker; }
   public AgentRunner runner() { return runner; }
+  public ApprovalService approvals() { return approvals; }
 
   // ---- commands ----
 
@@ -74,15 +82,19 @@ public final class Workflow {
   }
 
   public Refusal requestApproval(Session s, UUID findingId, String planHash, Actor actor) {
-    return new Refusal(409, "NOT_AVAILABLE", "Approval is not built yet");
+    return approvals.request(s, findingId, planHash, actor);
   }
 
   public Refusal approve(Session s, UUID findingId, String planHash, Actor actor, String comment) {
-    return new Refusal(409, "NOT_AVAILABLE", "Approval is not built yet");
+    ApprovalService.Outcome o = approvals.approve(s, findingId, planHash, actor, comment);
+    if (o.refusal() != null) return o.refusal();
+    Operation op = o.operation();
+    runs.execute(() -> runRemediation(s, findingId, op));
+    return null;
   }
 
   public Refusal reject(Session s, UUID findingId, String planHash, Actor actor, String comment) {
-    return new Refusal(409, "NOT_AVAILABLE", "Approval is not built yet");
+    return approvals.reject(s, findingId, planHash, actor, comment);
   }
 
   public Refusal triggerDrift(Session s, UUID findingId, Actor actor) {
@@ -138,18 +150,8 @@ public final class Workflow {
       if (v2 == null) return;
 
       Lifecycle.transition(s, s.stores(), findingId, FindingState.ANALYSING, FindingState.PLAN_READY,
-          "plan v" + v2.version() + " " + v2.hash().substring(0, 8) + " passed guards, lint and policy", () -> {
-            List<TimelineEvent> extra = new ArrayList<>();
-            for (Approval ap : s.stores().approvals().forFinding(findingId)) {
-              if (ap.status() == Approval.Status.REQUESTED && !ap.planHash().equals(v2.hash())) {
-                ap.mark(Approval.Status.VOIDED, Instant.now());
-                extra.add(TimelineEvent.of(findingId, ActorType.gate, "approval_service", "approve", "approval.voided",
-                    "approval.plan_binding: VOIDED. The plan changed to " + v2.hash().substring(0, 8),
-                    Map.of("rule", "approval.plan_binding", "result", "VOIDED", "approval_id", ap.id().toString()), Labels.PLATFORM));
-              }
-            }
-            return extra;
-          });
+          "plan v" + v2.version() + " " + v2.hash().substring(0, 8) + " passed guards, lint and policy",
+          () -> ApprovalService.voidOpen(s, findingId, "the plan changed to " + v2.hash().substring(0, 8)));
     } catch (RuntimeException e) {
       attention(s, findingId, FindingState.ANALYSING, "INTERNAL_ERROR", e.getClass().getSimpleName() + ": " + e.getMessage());
     }
@@ -191,6 +193,139 @@ public final class Workflow {
             + exec.scenarios().size() + " scenarios" + (previous == null ? "" : ", +" + added.size() + " grants, +" + addedScenarios.size() + " scenario"),
         p, Labels.PLATFORM));
     return plan;
+  }
+
+  // ---- remediation: the recorded agent applies by reference, the execution guard decides what happened ----
+
+  void runRemediation(Session s, UUID findingId, Operation op) {
+    Findings.Entry entry = s.stores().findings().get(findingId);
+    RunContext ctx = new RunContext(s, findingId, AgentId.remediation, "main");
+    ctx.operationId = op.id();
+    try {
+      AgentRunner.RunResult r = runner.run(ctx);
+      OpState st = op.state();
+      if (r.stopped()) {
+        if (st.state() == OperationState.EXECUTING || st.state() == OperationState.OUTCOME_UNKNOWN) {
+          reconcile(s, ctx, op);
+          st = op.state();
+        }
+        boolean stale = (st.state() == OperationState.FAILED_NOT_APPLIED && !st.retryable())
+            || (st.state() == OperationState.APPROVED && !op.preflightPassed());
+        if (stale && !"RECORDING_MISS".equals(r.stopCode())) { backToAnalysis(s, findingId, op); return; }
+        attention(s, findingId, FindingState.REMEDIATING, r.stopCode(), r.trigger() + (op.lastError() == null ? "" : ": " + op.lastError()));
+        return;
+      }
+      Decision.Remediation d = (Decision.Remediation) r.decision();
+      if (d.verdict() == Decision.Remediation.Verdict.escalate) {
+        attention(s, findingId, FindingState.REMEDIATING, "AGENT_ESCALATED", d.reason());
+        return;
+      }
+      if (op.state().state() != OperationState.APPLIED) {
+        attention(s, findingId, FindingState.REMEDIATING, "OPERATION_" + op.state().state(), "the operation did not reach APPLIED");
+        return;
+      }
+      Lifecycle.Result t = Lifecycle.transition(s, s.stores(), findingId, FindingState.REMEDIATING, FindingState.VERIFYING,
+          "operation " + op.id().toString().substring(0, 8) + " is APPLIED", Lifecycle.Effects.NONE);
+      if (t == Lifecycle.Result.OK) runVerification(s, findingId, op);
+    } catch (RuntimeException e) {
+      attention(s, findingId, FindingState.REMEDIATING, "INTERNAL_ERROR", e.getClass().getSimpleName() + ": " + e.getMessage());
+    }
+  }
+
+  /** Deterministic reconciliation, run by the workflow itself after a safe stop, so an operation is never left unknown. */
+  void reconcile(Session s, RunContext ctx, Operation op) {
+    adr.domain.Plan plan = s.stores().plans().byHash(op.planHash());
+    for (int i = 0; i < Operation.MAX_RECONCILIATIONS; i++) {
+      adr.target.TargetDatabase.StatusResult st = s.target().operationStatus(Caller.agent_remediator, op.id());
+      OpState cur = op.state();
+      if (!st.inFlight() && st.found()) {
+        ExecutionGuard.applied(s, ctx, op, false, st.row(), st.fingerprint());
+        note(s, ctx.findingId, "remediate", "Workflow reconciled operation " + op.id().toString().substring(0, 8) + ": ledger row found, applied once.");
+        return;
+      }
+      if (!st.inFlight() && plan != null && plan.exec().expectedBefore().equals(st.fingerprint())) {
+        op.compareAndSet(cur, cur.failedNotApplied(true));
+        ExecutionGuard.stateEvent(s, ctx, op, OperationState.FAILED_NOT_APPLIED, "Workflow reconciled: nothing committed, retryable.");
+        return;
+      }
+      op.reconciliations().incrementAndGet();
+    }
+    OpState cur = op.state();
+    op.compareAndSet(cur, cur.needsHuman());
+    ExecutionGuard.stateEvent(s, ctx, op, OperationState.NEEDS_HUMAN, "Three inconclusive reconciliations. A human must look.");
+  }
+
+  void backToAnalysis(Session s, UUID findingId, Operation op) {
+    Lifecycle.Result r = Lifecycle.transition(s, s.stores(), findingId, FindingState.REMEDIATING, FindingState.ANALYSING,
+        "plan is stale: " + (op.lastError() == null ? "pre-flight failed" : op.lastError()),
+        () -> ApprovalService.voidOpen(s, findingId, "the plan is stale and returns to analysis"));
+    if (r == Lifecycle.Result.OK) runAnalysis(s, findingId);
+  }
+
+  // ---- verification: facts first, then the recorded verifier, then the verdict guard ----
+
+  void runVerification(Session s, UUID findingId, Operation op) {
+    Findings.Entry entry = s.stores().findings().get(findingId);
+    try {
+      adr.domain.Plan plan = s.stores().plans().byHash(op.planHash());
+      java.util.function.Consumer<Session> hook = beforeVerificationHook;
+      if (hook != null) hook.accept(s);
+      adr.domain.VerificationRecord rec = Verification.compute(s, entry, op, plan.exec());
+      Map<String, Object> p = new LinkedHashMap<>();
+      p.put("rule", "verification.checks");
+      p.put("result", rec.allPassed() ? "PASS" : "REFUSED");
+      p.put("record", rec);
+      String summary = rec.assertions().size() + " assertions, " + rec.probes().size() + " probes, " + rec.scenarios().size() + " scenarios"
+          + (rec.allPassed() ? ": all passed" : ": " + rec.failed().size() + " failed");
+      s.timeline().append(TimelineEvent.of(findingId, ActorType.gate, "verification", "verify", "verification.completed",
+          "verification.checks: " + (rec.allPassed() ? "PASS" : "REFUSED") + ". " + summary + ", computed before the verifier's turn", p, Labels.SIMULATED_PG));
+
+      RunContext ctx = new RunContext(s, findingId, AgentId.verification, "main");
+      ctx.operationId = op.id();
+      AgentRunner.RunResult r = runner.run(ctx);
+      if (r.stopped()) { attention(s, findingId, FindingState.VERIFYING, r.stopCode(), r.trigger()); return; }
+      Decision.Verification d = (Decision.Verification) r.decision();
+      if (d.verdict() != Decision.Verification.Verdict.pass) {
+        attention(s, findingId, FindingState.VERIFYING, "VERIFICATION_" + d.verdict().name().toUpperCase(),
+            "rollback is designed but not built in D0, so the lifecycle stops here: " + d.reason());
+        return;
+      }
+      close(s, entry, op, plan);
+    } catch (RuntimeException e) {
+      attention(s, findingId, FindingState.VERIFYING, "INTERNAL_ERROR", e.getClass().getSimpleName() + ": " + e.getMessage());
+    }
+  }
+
+  void close(Session s, Findings.Entry entry, Operation op, adr.domain.Plan plan) {
+    UUID findingId = entry.finding.id();
+    String live = s.target().fingerprint(Caller.agent_supervisor, entry.finding.subjectRole());
+    Map<String, Object> snap = s.target().snapshot(Caller.agent_supervisor, entry.finding.subjectRole());
+    Lifecycle.transition(s, s.stores(), findingId, FindingState.VERIFYING, FindingState.CLOSED,
+        "verdict pass, evidence sealed", () -> {
+          entry.sealedFingerprint = live;
+          entry.sealedSnapshot = snap;
+          String docId = "OUT-" + (9000 + s.stores().corpus().overlay().size() + 1);
+          adr.stores.Seed.CorpusDoc outcome = new adr.stores.Seed.CorpusDoc(docId, "outcome",
+              entry.finding.assetId() + ": owner membership right-size succeeded", entry.finding.findingType(), "orders", "success", null,
+              plan.exec().grants().stream().map(g -> new adr.stores.Seed.PrivilegeRef(g.privilege(), g.kind(), g.object())).toList(),
+              List.of("owner", "membership", "success"),
+              "Plan v" + plan.version() + " replaced the owner membership with " + plan.exec().grants().size() + " explicit grants. Verified with "
+                  + String.join(", ", plan.exec().scenarios()) + ". Written back by this session; in memory only.");
+          s.stores().corpus().addOutcome(outcome);
+          Map<String, Object> p = new LinkedHashMap<>();
+          p.put("rule", "evidence.seal");
+          p.put("result", "PASS");
+          p.put("sealed_fingerprint", live);
+          p.put("operation_id", op.id().toString());
+          p.put("outcome_doc_id", docId);
+          return List.of(TimelineEvent.of(findingId, ActorType.gate, "workflow", "supervise", "evidence.sealed",
+              "evidence.seal: PASS. Fingerprint " + live.substring(0, 8) + " sealed; outcome " + docId + " written to the corpus overlay. Drift supervision starts.",
+              p, Labels.PLATFORM));
+        });
+  }
+
+  static void note(Session s, UUID findingId, String stage, String text) {
+    s.timeline().append(TimelineEvent.of(findingId, ActorType.system, "workflow", stage, "system.notice", text, Map.of(), Labels.PLATFORM));
   }
 
   // ---- helpers ----

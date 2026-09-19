@@ -24,7 +24,21 @@ public final class EvidenceExport {
       m.put("findings", Snapshot.of(s).get("findings"));
       m.put("approvals", s.stores().approvals().all().stream().map(Snapshot::approval).toList());
       m.put("operations", s.stores().operations().all().stream().map(Snapshot::operation).toList());
-      m.put("evidence", s.stores().evidence().all());
+      java.util.List<Map<String, Object>> evidence = new java.util.ArrayList<>();
+      for (adr.domain.Evidence e : s.stores().evidence().all()) {
+        Map<String, Object> em = new LinkedHashMap<>();
+        em.put("id", e.id());
+        em.put("tool", e.tool());
+        em.put("source_label", e.sourceLabel());
+        boolean target = Labels.SIMULATED_PG.equals(e.sourceLabel()) || Labels.APP_SIM.equals(e.sourceLabel());
+        em.put("target_mode", target ? Labels.TARGET_MODE : null);
+        em.put("run_id", e.runId());
+        em.put("ts", e.ts());
+        em.put("data", e.data());
+        evidence.add(em);
+      }
+      m.put("evidence", evidence);
+      m.put("plans", s.stores().plans().forFinding(s.activeFindingId()).stream().map(Snapshot::plan).toList());
       m.put("corpus_overlay", s.stores().corpus().overlay());
       m.put("timeline", s.timeline().all());
       return m;
