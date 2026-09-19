@@ -872,18 +872,37 @@
       return b;
     };
     const needPlan = plan ? null : 'no plan exists for this finding yet';
+    // Availability depends on the finding's state and on the persona acting: who may do what is a server rule.
+    const persona = currentPersona();
+    const who = { requester: 'Sam', dba: 'Dana' };
+    const inState = (want, label) => st === want ? null : 'available when the finding is ' + pretty(want) + ', it is ' + pretty(st) + (label ? '' : '');
+    const as = (p, verb) => persona === p ? null : 'switch to ' + who[p] + ' to ' + verb;
+    const first = (...reasons) => reasons.find((r) => r) || null;
     const lifecycle = el('div', 'grp');
-    lifecycle.appendChild(el('span', 'muted', 'Lifecycle'));
-    lifecycle.appendChild(btn('Start analysis', () => send('start_analysis', currentPersona(), { finding_id: f.id }),
-      st === 'OPEN' ? null : 'available when the finding is OPEN, it is ' + pretty(st)));
-    lifecycle.appendChild(btn('Request approval', () => send('request_approval', currentPersona(), { finding_id: f.id, plan_hash: plan.hash }),
-      st !== 'PLAN_READY' ? 'available when the finding is PLAN READY, it is ' + pretty(st) : needPlan));
-    lifecycle.appendChild(btn('Approve', () => send('approve', currentPersona(), { finding_id: f.id, plan_hash: plan.hash }),
-      st !== 'AWAITING_APPROVAL' ? 'available when the finding is AWAITING APPROVAL, it is ' + pretty(st) : needPlan));
-    lifecycle.appendChild(btn('Reject', () => send('reject', currentPersona(), { finding_id: f.id, plan_hash: plan.hash }),
-      st !== 'AWAITING_APPROVAL' ? 'available when the finding is AWAITING APPROVAL, it is ' + pretty(st) : needPlan));
-    lifecycle.appendChild(btn('Trigger drift', () => send('trigger_drift', currentPersona(), { finding_id: f.id }),
-      st === 'CLOSED' ? null : 'available when the finding is CLOSED, it is ' + pretty(st)));
+    lifecycle.appendChild(el('span', 'muted', 'Lifecycle \u00B7 ' + pretty(st)));
+    lifecycle.appendChild(btn('Start analysis', () => send('start_analysis', persona, { finding_id: f.id }),
+      first(inState('OPEN'), as('requester', 'start analysis'))));
+    lifecycle.appendChild(btn('Request approval', () => send('request_approval', persona, { finding_id: f.id, plan_hash: plan.hash }),
+      first(inState('PLAN_READY'), needPlan)));
+    lifecycle.appendChild(btn('Approve', () => send('approve', persona, { finding_id: f.id, plan_hash: plan.hash }),
+      first(inState('AWAITING_APPROVAL'), needPlan, as('dba', 'approve'))));
+    lifecycle.appendChild(btn('Reject', () => send('reject', persona, { finding_id: f.id, plan_hash: plan.hash }),
+      first(inState('AWAITING_APPROVAL'), needPlan, as('dba', 'reject'))));
+    lifecycle.appendChild(btn('Trigger drift', () => send('trigger_drift', persona, { finding_id: f.id }),
+      inState('CLOSED')));
+    // The next valid action, or the persona switch it needs.
+    const next = (() => {
+      switch (st) {
+        case 'OPEN': return persona === 'requester' ? 'Next: start analysis.' : 'Switch to Sam to start analysis.';
+        case 'PLAN_READY': return plan ? 'Next: request approval of plan v' + plan.version + '.' : 'Waiting for a plan.';
+        case 'AWAITING_APPROVAL': return persona === 'dba' ? 'Next: approve or reject.' : 'Switch to Dana to approve or reject.';
+        case 'CLOSED': return 'Next: trigger drift to see supervision.';
+        case 'REOPENED': return 'This finding is closed out; its child is active.';
+        case 'NEEDS_ATTENTION': return 'The lifecycle stopped here. Reset to start again.';
+        default: return 'A stage is running; wait for it to finish.';
+      }
+    })();
+    lifecycle.appendChild(el('span', 'next-hint', next));
     x.appendChild(lifecycle);
     const faults = el('div', 'grp');
     faults.appendChild(el('span', 'muted', 'Inject'));
@@ -938,6 +957,7 @@
     $('reset').onclick = () => send('reset', currentPersona() || 'requester', {});
     $('again').onclick = () => { document.cookie = 'adr_session=; Max-Age=0; path=/'; location.reload(); };
     $('new-events').onclick = () => { state.atBottom = true; scrollBottom(); };
+    $('persona').addEventListener('change', () => { if (exploring()) renderGuide(); });
     $('timeline').addEventListener('scroll', () => {
       const ol = $('timeline');
       state.atBottom = ol.scrollHeight - ol.scrollTop - ol.clientHeight < 24;

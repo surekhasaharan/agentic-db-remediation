@@ -223,7 +223,8 @@ table.small td.num { text-align: right; font-family: var(--mono); }
 .guide.explore-mode { flex-direction: column; align-items: stretch; gap: 8px; }
 .explore { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .explore input[type=number] { width: 80px; border: 1px solid var(--line); border-radius: 6px; padding: 5px; background: var(--surface); color: var(--text); }
-.explore .grp { display: flex; gap: 6px; align-items: center; padding-left: 10px; border-left: 1px solid var(--line); }
+.explore .grp { display: flex; gap: 6px; align-items: center; padding-left: 10px; border-left: 1px solid var(--line); flex-wrap: wrap; }
+.explore .next-hint { font-size: 12.5px; color: var(--muted); flex-basis: 100%; }
 
 /* Overlays and sheet */
 .overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--bg) 85%, transparent); display: flex; align-items: center; justify-content: center; z-index: 20; }
