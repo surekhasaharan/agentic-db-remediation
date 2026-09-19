@@ -68,7 +68,7 @@ public final class Snapshot {
     return c;
   }
 
-  static Map<String, Object> finding(Session s, Findings.Entry e) {
+  public static Map<String, Object> finding(Session s, Findings.Entry e) {
     Map<String, Object> f = new LinkedHashMap<>();
     f.put("id", e.finding.id().toString());
     f.put("parent_finding_id", e.finding.parentFindingId() == null ? null : e.finding.parentFindingId().toString());

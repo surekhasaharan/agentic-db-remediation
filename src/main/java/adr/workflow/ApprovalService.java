@@ -34,14 +34,15 @@ public final class ApprovalService {
   public ApprovalService(Policy policy) { this.policy = policy; }
 
   public record Outcome(Workflow.Refusal refusal, Operation operation) {
-    static Outcome refused(int status, String code, String message) { return new Outcome(new Workflow.Refusal(status, code, message), null); }
+    static Outcome refused(int status, String code, String message) { return new Outcome(new Workflow.Refusal(status, code, message, false), null); }
+    static Outcome gated(int status, String code, String message) { return new Outcome(new Workflow.Refusal(status, code, message, true), null); }
   }
 
   public Workflow.Refusal request(Session s, UUID findingId, String planHash, Actor actor) {
     Plan latest = s.stores().plans().latest(findingId);
     if (latest == null || !latest.hash().equals(planHash)) {
       gate(s, findingId, "approval.plan_binding", false, "the hash does not name the latest plan version" + (latest == null ? "" : " " + latest.hash().substring(0, 8)));
-      return new Workflow.Refusal(409, "PLAN_HASH_MISMATCH", "plan_hash must equal the finding's latest plan version");
+      return new Workflow.Refusal(409, "PLAN_HASH_MISMATCH", "plan_hash must equal the finding's latest plan version", true);
     }
     Instant now = clock.get();
     Approval approval = new Approval(UUID.randomUUID(), findingId, planHash, actor, now,
@@ -67,16 +68,16 @@ public final class ApprovalService {
     boolean sod = !policy.approval().separationOfDuties() || !actor.id().equals(a.requester().id());
     gate(s, findingId, "approval.separation_of_duties", sod, sod ? "approver " + actor.id() + " is not the requester " + a.requester().id()
         : "the requester " + a.requester().displayName() + " cannot approve their own request");
-    if (!sod) return Outcome.refused(409, "SEPARATION_OF_DUTIES", "the requester cannot approve");
+    if (!sod) return Outcome.gated(409, "SEPARATION_OF_DUTIES", "the requester cannot approve");
 
     boolean persona = policy.approval().approverPersonas().contains(actor.persona());
     gate(s, findingId, "approval.persona_allowed", persona, persona ? actor.persona() + " may approve" : actor.persona() + " is not an approver persona " + policy.approval().approverPersonas());
-    if (!persona) return Outcome.refused(409, "PERSONA_NOT_ALLOWED", "only " + policy.approval().approverPersonas() + " may approve");
+    if (!persona) return Outcome.gated(409, "PERSONA_NOT_ALLOWED", "only " + policy.approval().approverPersonas() + " may approve");
 
     Plan latest = s.stores().plans().latest(findingId);
     boolean bound = planHash.equals(a.planHash()) && latest != null && latest.hash().equals(planHash);
     gate(s, findingId, "approval.plan_binding", bound, bound ? "hash " + planHash.substring(0, 8) + " equals the requested and latest plan" : "hash does not equal the requested plan " + a.planHash().substring(0, 8));
-    if (!bound) return Outcome.refused(409, "PLAN_HASH_MISMATCH", "plan_hash must equal the approved plan version");
+    if (!bound) return Outcome.gated(409, "PLAN_HASH_MISMATCH", "plan_hash must equal the approved plan version");
 
     boolean fresh = !a.isExpired(now);
     gate(s, findingId, "approval.expiry", fresh, fresh ? "requested " + Duration.between(a.requestedAt(), now).toMinutes() + " minutes ago, within " + policy.approval().expiryMinutes()
@@ -84,7 +85,7 @@ public final class ApprovalService {
     if (!fresh) {
       a.mark(Approval.Status.EXPIRED, now);
       Lifecycle.transition(s, s.stores(), findingId, FindingState.AWAITING_APPROVAL, FindingState.PLAN_READY, "approval expired", Lifecycle.Effects.NONE);
-      return Outcome.refused(409, "APPROVAL_EXPIRED", "the approval request expired; request it again");
+      return Outcome.gated(409, "APPROVAL_EXPIRED", "the approval request expired; request it again");
     }
 
     Findings.Entry entry = s.stores().findings().get(findingId);
@@ -123,7 +124,7 @@ public final class ApprovalService {
     if (a == null) return new Workflow.Refusal(409, "NO_OPEN_APPROVAL", "there is no open approval request");
     if (!planHash.equals(a.planHash())) {
       gate(s, findingId, "approval.plan_binding", false, "hash does not equal the requested plan");
-      return new Workflow.Refusal(409, "PLAN_HASH_MISMATCH", "plan_hash must equal the requested plan version");
+      return new Workflow.Refusal(409, "PLAN_HASH_MISMATCH", "plan_hash must equal the requested plan version", true);
     }
     Instant now = clock.get();
     Lifecycle.Result r = Lifecycle.transition(s, s.stores(), findingId, FindingState.AWAITING_APPROVAL, FindingState.PLAN_READY,

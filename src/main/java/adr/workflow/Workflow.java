@@ -42,7 +42,9 @@ import java.util.concurrent.Executor;
  * finding. Slow work (agent runs) happens on the runs executor, never inside a lock.
  */
 public final class Workflow {
-  public record Refusal(int status, String code, String message) {}
+  public record Refusal(int status, String code, String message, boolean recorded) {
+    public Refusal(int status, String code, String message) { this(status, code, message, false); }
+  }
 
   private final Executor runs;
   private final Policy policy;
@@ -97,8 +99,20 @@ public final class Workflow {
     return approvals.reject(s, findingId, planHash, actor, comment);
   }
 
+  /** The out-of-band change: dba_oncall re-grants the owner role through a separate client. The poller does the rest. */
   public Refusal triggerDrift(Session s, UUID findingId, Actor actor) {
-    return new Refusal(409, "NOT_AVAILABLE", "Drift is not built yet");
+    Findings.Entry entry = s.stores().findings().get(findingId);
+    adr.stores.Seed.AuditRow row = adr.target.OutOfBandClient.regrant(s.target(), s.stores().audit(), entry.finding.ownerRole(), entry.finding.subjectRole());
+    Map<String, Object> p = new LinkedHashMap<>();
+    p.put("switch", "out_of_band_drift");
+    p.put("actor", row.actor());
+    p.put("action", row.action());
+    p.put("ticket", row.ticket());
+    p.put("by", actor.id());
+    s.timeline().append(TimelineEvent.of(findingId, ActorType.chaos, "chaos", "supervise", "chaos.fired",
+        "Injected: " + row.actor() + " ran \"" + row.action() + "\" outside the system (" + row.ticket() + "). The poller checks the fingerprint every "
+            + (DriftPoller.INTERVAL_MS / 1000) + " seconds.", p, Labels.AUDIT));
+    return null;
   }
 
   public Refusal armChaos(Session s, ChaosSwitches.Switch sw, Actor actor) {
@@ -326,6 +340,85 @@ public final class Workflow {
 
   static void note(Session s, UUID findingId, String stage, String text) {
     s.timeline().append(TimelineEvent.of(findingId, ActorType.system, "workflow", stage, "system.notice", text, Map.of(), Labels.PLATFORM));
+  }
+
+  // ---- supervision: the poller detected drift; the recorded supervisor classifies it; a guard has the last word ----
+
+  public void startSupervisor(Session s, UUID findingId) {
+    runs.execute(() -> runSupervision(s, findingId));
+  }
+
+  void runSupervision(Session s, UUID findingId) {
+    Findings.Entry entry = s.stores().findings().get(findingId);
+    RunContext ctx = new RunContext(s, findingId, AgentId.supervision, "main");
+    try {
+      AgentRunner.RunResult r = runner.run(ctx);
+      if (r.stopped()) { attention(s, findingId, FindingState.DRIFT_DETECTED, r.stopCode(), r.trigger()); return; }
+      Decision.Supervision d = (Decision.Supervision) r.decision();
+      switch (d.verdict()) {
+        case reopen -> {
+          Policy.Decision pd = policy.evaluateReopen(entry.state());
+          gate(s, findingId, "supervise", pd.rule(), pd.allowed(), pd.reason());
+          if (!pd.allowed()) { attention(s, findingId, FindingState.DRIFT_DETECTED, "POLICY_DENIED", pd.reason()); return; }
+          reopen(s, findingId, d);
+        }
+        case annotate -> reseal(s, entry, s.target().fingerprint(Caller.agent_supervisor, entry.finding.subjectRole()),
+            "classified as an authorised change: " + d.reason());
+        case inconclusive -> attention(s, findingId, FindingState.DRIFT_DETECTED, "SUPERVISOR_INCONCLUSIVE", d.reason());
+      }
+    } catch (RuntimeException e) {
+      attention(s, findingId, FindingState.DRIFT_DETECTED, "INTERNAL_ERROR", e.getClass().getSimpleName() + ": " + e.getMessage());
+    }
+  }
+
+  /**
+   * Reopen, atomically. The reopen-legality guard ran before this in the runner; here one transition creates
+   * the child in OPEN, moves the active pointer and appends three events with consecutive sequence numbers.
+   */
+  Lifecycle.Result reopen(Session s, UUID parentId, Decision.Supervision decision) {
+    Findings.Entry parent = s.stores().findings().get(parentId);
+    UUID childId = UUID.randomUUID();
+    return Lifecycle.transition(s, s.stores(), parentId, FindingState.DRIFT_DETECTED, FindingState.REOPENED, decision.reason(), () -> {
+      adr.domain.Finding child = parent.finding.child(childId);
+      s.stores().findings().add(child);
+      UUID from = s.activeFindingId();
+      s.activeFindingId(childId);
+      parent.reopenedBySeq = s.timeline().lastSeq() + 1;
+      Map<String, Object> p1 = new LinkedHashMap<>();
+      p1.put("finding_id", childId.toString());
+      p1.put("state", "OPEN");
+      p1.put("parent_finding_id", parentId.toString());
+      p1.put("finding", adr.app.Snapshot.finding(s, s.stores().findings().get(childId)));
+      Map<String, Object> p2 = new LinkedHashMap<>();
+      p2.put("from", from == null ? null : from.toString());
+      p2.put("to", childId.toString());
+      return List.of(
+          TimelineEvent.of(childId, ActorType.system, "lifecycle", "analyse", "finding.created",
+              "Finding reopened as " + childId.toString().substring(0, 8) + " in OPEN, linked to its parent", p1, Labels.PLATFORM),
+          TimelineEvent.of(childId, ActorType.system, "lifecycle", "analyse", "session.active_finding_changed",
+              "The workbench now shows the reopened finding", p2, Labels.PLATFORM));
+    });
+  }
+
+  /** An authorised change, or the finding's own after-state: reseal with the new fingerprint. */
+  void reseal(Session s, Findings.Entry entry, String fp, String why) {
+    UUID findingId = entry.finding.id();
+    FindingState from = entry.state();
+    if (from != FindingState.DRIFT_DETECTED && from != FindingState.CLOSED) return;
+    Map<String, Object> snap = s.target().snapshot(Caller.agent_supervisor, entry.finding.subjectRole());
+    Lifecycle.Effects effects = () -> {
+      entry.sealedFingerprint = fp;
+      entry.sealedSnapshot = snap;
+      entry.drift = null;
+      return List.of(TimelineEvent.of(findingId, ActorType.gate, "workflow", "supervise", "evidence.sealed",
+          "evidence.seal: PASS. Resealed with fingerprint " + fp.substring(0, 8) + ": " + why,
+          Map.of("rule", "evidence.seal", "result", "PASS", "sealed_fingerprint", fp), Labels.PLATFORM));
+    };
+    if (from == FindingState.DRIFT_DETECTED) {
+      Lifecycle.transition(s, s.stores(), findingId, FindingState.DRIFT_DETECTED, FindingState.CLOSED, "resealed: " + why, effects);
+    } else {
+      synchronized (s.lock()) { if (s.isCurrent()) s.timeline().appendAll(effects.run()); }
+    }
   }
 
   // ---- helpers ----

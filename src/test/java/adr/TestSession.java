@@ -30,6 +30,7 @@ public final class TestSession {
   public final SessionRegistry registry;
   public final Workflow workflow;
   public final Commands commands;
+  public final adr.workflow.DriftPoller poller;
   public Session session;
 
   public TestSession() { this(RECORDED); }
@@ -39,6 +40,7 @@ public final class TestSession {
     this.workflow = new Workflow(Runnable::run, POLICY, model);
     this.registry = new SessionRegistry((id, epoch, reg) -> Session.fromSeed(id, epoch, reg, seed));
     this.commands = new Commands(registry, workflow);
+    this.poller = new adr.workflow.DriftPoller(registry::live, workflow);
     this.session = registry.mint();
   }
 

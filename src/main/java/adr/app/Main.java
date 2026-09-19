@@ -32,6 +32,13 @@ public final class Main {
       return t;
     });
     housekeeping.scheduleAtFixedRate(() -> registry.sweep(Instant.now()), 1, 1, TimeUnit.MINUTES);
+    adr.workflow.DriftPoller poller = new adr.workflow.DriftPoller(registry::live, workflow);
+    ScheduledExecutorService polling = Executors.newSingleThreadScheduledExecutor(r -> {
+      Thread t = new Thread(r, "drift-poller");
+      t.setDaemon(true);
+      return t;
+    });
+    polling.scheduleAtFixedRate(poller::tick, adr.workflow.DriftPoller.INTERVAL_MS, adr.workflow.DriftPoller.INTERVAL_MS, TimeUnit.MILLISECONDS);
 
     new Api(registry, commands, boot.health()).build().start(port);
     System.out.println("adr-demo listening on http://localhost:" + port + " (recordings " + boot.recordingsHash().substring(0, 12) + ")");

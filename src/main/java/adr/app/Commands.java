@@ -193,6 +193,7 @@ public final class Commands {
 
   private Result outcome(Session s, UUID findingId, Workflow.Refusal refusal) {
     if (refusal == null) return Result.accepted();
+    if (refusal.recorded()) return Result.refused(refusal.status(), refusal.code(), refusal.message()); // the service already gated it
     return refuse(s, findingId, refusal.status(), refusal.code(), refusal.message());
   }
 

@@ -30,13 +30,23 @@ public final class StartupChecks {
       throw new IllegalStateException(sb.toString());
     }
     String hash = RecordingValidator.hashOf(recordings);
+    RecordedModelClient model = new RecordedModelClient(recordings);
+    java.util.List<adr.workflow.GoldenFlow.Result> golden = adr.workflow.GoldenFlow.run(policy, model, seed);
+    Map<String, Object> goldenReport = new LinkedHashMap<>();
+    boolean goldenOk = true;
+    for (adr.workflow.GoldenFlow.Result g : golden) {
+      goldenReport.put(g.config(), g.ok() ? "ok" : g.detail());
+      goldenOk &= g.ok();
+    }
+    if (!goldenOk) throw new IllegalStateException("golden-flow self-check failed: " + goldenReport);
     Map<String, Object> health = new LinkedHashMap<>();
     health.put("status", "ok");
+    health.put("golden_flow", goldenReport);
     health.put("policy_version", policy.version());
     health.put("recordings_hash", hash);
     health.put("recordings", recordings.keySet());
     health.put("agent_mode", "recorded");
     health.put("target_mode", "simulated");
-    return new Result(seed, policy, new RecordedModelClient(recordings), hash, health);
+    return new Result(seed, policy, model, hash, health);
   }
 }
