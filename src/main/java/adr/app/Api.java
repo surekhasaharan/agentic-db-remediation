@@ -45,6 +45,9 @@ public final class Api {
       sessionFor(ctx);
       ctx.html(indexHtml);
     });
+    // Cloud Run's front end reserves /healthz and answers it itself, so the health document is served at
+    // /api/health; /healthz stays as a local compatibility alias.
+    app.get("/api/health", ctx -> ctx.result(Json.write(Json.SNAKE, health)));
     app.get("/healthz", ctx -> ctx.result(Json.write(Json.SNAKE, health)));
     app.get("/api/state", ctx -> {
       Session s = sessionFor(ctx);

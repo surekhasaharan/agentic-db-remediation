@@ -26,7 +26,7 @@ docker build -t adr-demo . && docker run --rm -p 8080:8080 adr-demo
 
 Then open http://localhost:8080 and press Next nine times. `PORT` is honoured if set. There are no other environment variables.
 
-Start-up loads and validates the seed files, the policy and the five recordings, then runs the guided flow headless four times (no faults, duplicate delivery plus dropped response, abort before commit, drift) before binding the port. A failure exits non-zero. `GET /healthz` reports the policy version, the recordings hash and the self-check result.
+Start-up loads and validates the seed files, the policy and the five recordings, then runs the guided flow headless four times (no faults, duplicate delivery plus dropped response, abort before commit, drift) before binding the port. A failure exits non-zero. `GET /api/health` reports the policy version, the recordings hash and the self-check result; `/healthz` serves the same document locally, but Cloud Run's front end reserves that path, so use `/api/health` on the hosted URL.
 
 ## What the guided flow shows
 
