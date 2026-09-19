@@ -1,0 +1,7 @@
+-XX:+UseSerialGC
+-Xms32m
+-Xmx128m
+-Xss512k
+-XX:MaxMetaspaceSize=96m
+-XX:TieredStopAtLevel=1
+-XX:+ExitOnOutOfMemoryError
