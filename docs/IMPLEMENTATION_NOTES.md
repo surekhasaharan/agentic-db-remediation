@@ -39,11 +39,12 @@ Each one is small and deliberate. None changes an invariant.
 | Image size | 302 MB | `docker images` |
 | Burst, paced (guided) | 5,000 in about 12.5 s, queue peak 2 to 5 of 256, in flight peak 2 of 8, about 1,430 unique | `burst.completed` payload |
 | Burst, unpaced (tests) | 5,000 accounted for, queue never above 256, in flight never above 8, heap flat across three runs | `burstIsBounded` |
-| Test suite | 271 tests, 0 failures, `duplicateDeliveryAppliesOnce` x100 | `./mvnw package` |
+| Test suite | 274 tests, 0 failures, `duplicateDeliveryAppliesOnce` x100 | `./mvnw package` |
 
 ## Local acceptance record
 
 - Full suite green from `./mvnw clean package`.
+- Release review: the `.gitignore` pattern `target/` had also matched `src/main/java/adr/target`, so the simulated-target package and its test were missing from every earlier commit although present in the working tree and in every local build. The pattern is now `/target/` and the package is committed.
 - JAR started with `java @jvm.options -jar target/adr-demo.jar`; `/healthz` reported the recordings hash and all four golden configurations ok.
 - The nine beats were driven over HTTP and in the browser. State sequence for the parent finding: `ANALYSING, PLAN_READY, AWAITING_APPROVAL, REMEDIATING, VERIFYING, CLOSED, DRIFT_DETECTED, REOPENED`; a child finding opened in `OPEN`; counters ended at mutations 1, duplicates refused 1, refusals 1.
 - Browser checks: the four visual forms; folded checks and tool calls; the plan diff; reload mid-run resumes into explore mode with the timeline replayed; reset from a stable state reloads onto a new epoch; reset is disabled while busy; the About sheet; the evidence export; hostile corpus text renders as text.

@@ -1,5 +1,5 @@
-# Maven
-target/
+# Build output (root only: src/main/java/adr/target is source)
+/target/
 .mvn/wrapper/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.properties
 
@@ -9,7 +9,7 @@ target/
 hs_err_pid*
 replay_pid*
 
-# IDEs
+# IDEs and editors
 .idea/
 *.iml
 .vscode/
@@ -17,11 +17,34 @@ replay_pid*
 .project
 .classpath
 *.swp
+*.swo
 
-# OS
+# Operating system
 .DS_Store
 Thumbs.db
+._*
 
-# Local scratch and tooling
+# Local tooling, scratch and review artifacts
 .claude/
 *.local
+*.tmp
+*.orig
+*.rej
+scratch/
+tmp/
+/out/
+/build/
+
+# Credentials and environment files (none are used; listed so none can be added by accident)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials*.json
+service-account*.json
+application_default_credentials.json
+.gcloud/

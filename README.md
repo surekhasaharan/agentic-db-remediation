@@ -4,9 +4,15 @@ A self-contained demonstration of an agentic PostgreSQL privilege remediation sy
 
 **Prototype: recorded agent responses, a simulated PostgreSQL target and demo personas. Tools, policy, guards, workflow and fault handling run live.** The banner on the page, the tags on every card, the source labels on every piece of evidence and the fields in the evidence export all say so.
 
+## Prerequisites
+
+- A JDK 21 or newer, or Docker. Nothing else.
+- Network access on the first build only, so the Maven wrapper can download Maven and the dependencies. The running application makes no network calls.
+- A browser. Port 8080 by default; set `PORT` to change it.
+
 ## Run it
 
-With a JDK 21 or newer and nothing else installed:
+With a JDK 21 or newer:
 
 ```bash
 ./mvnw -q package && java @jvm.options -jar target/adr-demo.jar
@@ -36,7 +42,11 @@ Start-up loads and validates the seed files, the policy and the five recordings,
 | 8 | An on-call DBA re-grants the owner role outside the system | The poller detects drift; the supervisor recommends; a guard validates; a linked child opens |
 | 9 | 5,000 findings through a 256-slot queue and 8 workers | Live gauges stay under the named bounds |
 
-After step 9 the page hands over to an explore panel: inject faults, block writes with the kill switch, run the burst again, or run the lifecycle on the reopened finding.
+After step 9 the page hands over to an explore panel: inject faults, block writes with the kill switch, run the burst again, or run the lifecycle on the reopened finding. Controls enable only in the states and for the persona that admit them, and say why otherwise. The guided steps take about three minutes; a first-time reviewer should be able to say afterwards what the agents decided, what deterministic code enforced, what the human approved, and how the system recovered from the lost response.
+
+## Evidence export
+
+**Export evidence** in the explore panel downloads `evidence.json` for the session: every finding with its plans, approvals, operations and verification results, every evidence item with its source label, the whole timeline, and the labels (`agent_mode: recorded`, `target_mode: simulated`, `identity_mode: demo_persona`, `persistence: in_memory_session`, `captured: authored`). The same document is served at `GET /api/evidence.json`.
 
 ## What is real and what is not
 
@@ -62,7 +72,7 @@ Everything lives in memory. Reset, expiry, restart or scale to zero discards it 
 | Container memory, Docker, idle and after a full flow and burst | 62 MiB idle, 65 MiB after |
 | Container healthy after start | under 1 s |
 | Image size | 302 MB (Alpine JRE 21) |
-| Test suite | 271 tests, `duplicateDeliveryAppliesOnce` repeated 100 times |
+| Test suite | 274 tests, `duplicateDeliveryAppliesOnce` repeated 100 times |
 
 The host JDK here is 25; the build compiles for Java 21 (`--release 21`) and the Docker image builds and runs on Java 21.
 
@@ -95,8 +105,19 @@ The three extension points are `ModelClient`, `TargetDatabase` and `Stores`. `Ag
 ./mvnw package
 ```
 
-runs the whole suite. The names in the design map to classes under `src/test/java/adr`: timeline delivery, session reset and cap, command and tool input matrices, the simulated target, the broker and guards, recordings and the validator, analysis, execution with every fault seam, verification, drift and reopen, the burst, and the label scan.
+runs the whole suite: 274 tests, no mocks, no browser. The names in the design map to classes under `src/test/java/adr`: timeline delivery, session reset and cap, command and tool input matrices, the simulated target, the broker, policy and guards, recordings and the validator, analysis, execution with every fault seam, verification, drift and reopen, the burst, and the label scan. The Docker build runs the same suite in its build stage, so a red suite never produces an image.
+
+## Limitations
+
+- The agents are recordings. If a situation has no recorded turn, the run stops and says "Demo flow unavailable" rather than guessing.
+- The PostgreSQL target is a model of roles, memberships, grants, a transaction, a lock and a ledger. It parses no SQL and does not model grantor rules on revoke, MVCC, connections or a real lock manager.
+- Personas are chosen in the page; nothing is authenticated. Separation of duties compares persona ids.
+- Rollback, live model mode, a real PostgreSQL target, authentication and persistence are deferred by design.
+- Drift is detected by a two-second poll that runs only while a browser holds the event stream open.
+- There are no automated browser tests; the page is checked by hand.
+
+More detail, including every deviation from the design and the measurements, is in `docs/IMPLEMENTATION_NOTES.md`.
 
 ## Cloud Run
 
-Deployment is a separate step that runs only after explicit approval, with the project and region supplied at that time. See `docs/IMPLEMENTATION_PLAN.md`, phase 10.
+Deployment to Cloud Run is deferred. It is a separate step that runs only after explicit approval, with the project and region supplied at that time, and it changes nothing in the code: scale to zero, maximum one instance, no other cloud resource. See `docs/IMPLEMENTATION_PLAN.md`, phase 10.
