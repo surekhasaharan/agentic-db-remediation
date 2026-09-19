@@ -763,7 +763,7 @@
     renderGuide();
     if (step.commands) {
       for (const [type, args] of step.commands()) {
-        const r = await send(type, step.persona, args);
+        const r = await send(type, step.persona || currentPersona() || 'requester', args);
         if (r && r.status >= 400 && !(r.body.error && r.body.error.code === 'SEPARATION_OF_DUTIES')) {
           toast(type + ' refused: ' + (r.body.error ? r.body.error.code : r.status));
         }
