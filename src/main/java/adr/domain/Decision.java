@@ -17,7 +17,7 @@ public sealed interface Decision permits Decision.Analysis, Decision.Remediation
   }
 
   static List<String> evidence(List<String> e) {
-    return Require.nonBlankStrings(e, 32, 120, "evidence");
+    return Require.nonBlankStrings(Require.nonEmpty(e, 32, "evidence"), 32, 120, "evidence");
   }
 
   enum Confidence { low, medium, high }

@@ -1,10 +1,14 @@
 package adr;
 
+import adr.agents.ModelClient;
+import adr.agents.RecordedModelClient;
 import adr.app.Commands;
 import adr.app.Session;
 import adr.app.SessionRegistry;
+import adr.broker.Policy;
 import adr.domain.FindingState;
 import adr.domain.Json;
+import adr.domain.TimelineEvent;
 import adr.stores.Lifecycle;
 import adr.stores.Seed;
 import adr.workflow.Workflow;
@@ -16,17 +20,23 @@ import java.util.UUID;
 
 /**
  * Builds a Session from the seed and drives the Workflow directly with a direct executor, so every agent run
- * completes on the calling thread. No HTTP, no browser, no mocks.
+ * completes on the calling thread. No HTTP, no browser, no mocks: recorded agents, real broker, real guards,
+ * real simulated target.
  */
 public final class TestSession {
+  public static final Policy POLICY = Policy.load();
+  public static final RecordedModelClient RECORDED = RecordedModelClient.fromClasspath();
+
   public final SessionRegistry registry;
   public final Workflow workflow;
   public final Commands commands;
   public Session session;
 
-  public TestSession() {
+  public TestSession() { this(RECORDED); }
+
+  public TestSession(ModelClient model) {
     Seed seed = Seed.load();
-    this.workflow = new Workflow(Runnable::run);
+    this.workflow = new Workflow(Runnable::run, POLICY, model);
     this.registry = new SessionRegistry((id, epoch, reg) -> Session.fromSeed(id, epoch, reg, seed));
     this.commands = new Commands(registry, workflow);
     this.session = registry.mint();
@@ -35,6 +45,8 @@ public final class TestSession {
   public UUID findingId() { return session.activeFindingId(); }
 
   public FindingState state() { return session.stores().findings().stateOf(findingId()); }
+
+  public FindingState stateOf(UUID id) { return session.stores().findings().stateOf(id); }
 
   public Commands.Result send(String type, String persona, Map<String, Object> args) {
     Map<String, Object> body = new LinkedHashMap<>();
@@ -47,6 +59,16 @@ public final class TestSession {
   public Commands.Result sendRaw(String json) {
     return commands.handle(session, json, UUID.randomUUID().toString());
   }
+
+  public Commands.Result startAnalysis() {
+    return send("start_analysis", "requester", args("finding_id", findingId().toString()));
+  }
+
+  public List<TimelineEvent> events(String kind) {
+    return session.timeline().all().stream().filter(e -> e.kind().equals(kind)).toList();
+  }
+
+  public List<TimelineEvent> events() { return session.timeline().all(); }
 
   /** Forces a legal transition without running any stage, for arranging states. */
   public Lifecycle.Result force(UUID findingId, FindingState from, FindingState to) {

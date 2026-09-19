@@ -112,7 +112,7 @@ class SessionTest {
     TestSession b = new TestSession();
     assertNotSame(a.session.stores(), b.session.stores());
     a.send("start_analysis", "requester", a.args("finding_id", a.findingId().toString()));
-    assertEquals(FindingState.ANALYSING, a.state());
+    assertEquals(FindingState.PLAN_READY, a.state());
     assertEquals(FindingState.OPEN, b.state());
     assertNotEquals(a.session.timeline().lastSeq(), b.session.timeline().lastSeq());
     b.session.stores().audit().append(new adr.stores.Seed.AuditRow(1, "dba_oncall", "GRANT x TO y", "test", "T-1"));
@@ -144,6 +144,6 @@ class SessionTest {
     Commands.Result r2 = t.commands.handle(t.session, body, "key-1");
     assertEquals(202, r1.status());
     assertSame(r1, r2);
-    assertEquals(FindingState.ANALYSING, t.state());
+    assertEquals(FindingState.PLAN_READY, t.state());
   }
 }
