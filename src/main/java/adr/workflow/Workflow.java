@@ -123,8 +123,11 @@ public final class Workflow {
     return null;
   }
 
+  /** One burst per session at a time. Burst findings are triage-only and never become lifecycle findings. */
   public Refusal startBurst(Session s, int count, Actor actor) {
-    return new Refusal(409, "NOT_AVAILABLE", "The burst is not built yet");
+    if (!s.burstRunning().compareAndSet(false, true)) return new Refusal(409, "BURST_RUNNING", "A burst is already running");
+    runs.execute(() -> BurstPipeline.runForSession(s, count));
+    return null;
   }
 
   public Refusal killSwitch(Session s, boolean on, Actor actor) {
