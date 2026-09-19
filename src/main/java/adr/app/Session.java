@@ -11,6 +11,9 @@ import adr.stores.InMemoryStores;
 import adr.stores.Seed;
 import adr.stores.SessionHandle;
 import adr.stores.Timeline;
+import adr.target.AppSimulator;
+import adr.target.PgState;
+import adr.target.SimulatedPgTarget;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,6 +33,8 @@ public final class Session implements SessionHandle {
   private final SessionRegistry registry;
   private final Object lock = new Object();
   private final InMemoryStores stores;
+  private final SimulatedPgTarget target;
+  private final AppSimulator appSimulator;
   private volatile UUID activeFindingId;
   private final ChaosSwitches chaos = new ChaosSwitches();
   private final Counters counters = new Counters();
@@ -41,16 +46,18 @@ public final class Session implements SessionHandle {
   };
   private volatile Instant lastTouched = Instant.now();
 
-  private Session(String id, String epoch, SessionRegistry registry, InMemoryStores stores) {
+  private Session(String id, String epoch, SessionRegistry registry, InMemoryStores stores, Seed seed) {
     this.id = id;
     this.epoch = epoch;
     this.registry = registry;
     this.stores = stores;
+    this.target = new SimulatedPgTarget(PgState.fromSeed(seed.pgState), seed.finding.subjectRole(), seed.finding.ownerRole());
+    this.appSimulator = new AppSimulator(seed.scenarios);
   }
 
   public static Session fromSeed(String id, String epoch, SessionRegistry registry, Seed seed) {
     InMemoryStores stores = new InMemoryStores(epoch, seed);
-    Session s = new Session(id, epoch, registry, stores);
+    Session s = new Session(id, epoch, registry, stores, seed);
     s.activeFindingId = seed.finding.uuid();
     stores.timeline().append(TimelineEvent.of(null, ActorType.system, "session_registry", "session", "system.notice",
         "Session started. Everything here lives in memory until reset or expiry.",
@@ -62,6 +69,8 @@ public final class Session implements SessionHandle {
   public String epoch() { return epoch; }
   public InMemoryStores stores() { return stores; }
   public Timeline timeline() { return stores.timeline(); }
+  public SimulatedPgTarget target() { return target; }
+  public AppSimulator appSimulator() { return appSimulator; }
   public UUID activeFindingId() { return activeFindingId; }
   public void activeFindingId(UUID id) { activeFindingId = id; }
   public ChaosSwitches chaos() { return chaos; }
