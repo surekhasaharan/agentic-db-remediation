@@ -71,6 +71,7 @@ Everything lives in memory. Reset, expiry, restart or scale to zero discards it 
 | Resident memory, JAR, after a full flow and a 5,000-finding burst | 70 MB |
 | Container memory, Docker, idle and after a full flow and burst | 62 MiB idle, 65 MiB after |
 | Container healthy after start | under 1 s |
+| Cloud Run cold start, first byte after 18 minutes idle, us-west1, CPU boost | 2.0 to 2.4 s; warm requests about 0.12 s |
 | Image size | 302 MB (Alpine JRE 21) |
 | Test suite | 274 tests, `duplicateDeliveryAppliesOnce` repeated 100 times |
 
@@ -90,14 +91,21 @@ src/main/java/adr/
   chaos     Chaos, ChaosSwitches
 src/main/resources/
   policy.json  seed/*.json  recordings/*.json  public/index.html  public/static/{styles.css,app.js}
-docs/
-  DESIGN.md                the authoritative specification
-  IMPLEMENTATION_PLAN.md   the phased plan
-  IMPLEMENTATION_RULES.md  precedence, scope and workflow rules
-  IMPLEMENTATION_NOTES.md  what was built, deviations, measurements, limitations
 ```
 
 The three extension points are `ModelClient`, `TargetDatabase` and `Stores`. `AgentRunner` reaches only `ModelClient` and `ToolBroker`. `Findings.casState` is package-private and `stores.Lifecycle` is its only caller.
+
+## Documentation
+
+The documents under `docs/` are read in this order. The PRD describes the full product idea; the demo was scoped down from it, so the design, not the PRD, describes what is built here.
+
+| Document | Purpose |
+| --- | --- |
+| `docs/PRD.md` | The original product idea and competitive analysis: the full agentic remediation product with live agents and a real database. It was scoped down for this demo and does not describe the current design. |
+| `docs/DESIGN.md` | The authoritative specification of the D0 prototype: invariants, the simulated target, recorded agents, the lifecycle, fault handling, the page, tests and the Definition of Done. Where it conflicts with the PRD, the design wins. |
+| `docs/IMPLEMENTATION_RULES.md` | Precedence between the documents, scope boundaries, workflow, git and completion rules. |
+| `docs/IMPLEMENTATION_PLAN.md` | The phased build plan agreed before any code: packages, phases, tests per phase, the guided journey, decisions and the Definition of Done. |
+| `docs/IMPLEMENTATION_NOTES.md` | What was built, every deviation from the plan and the design with its reason, the measurements, the acceptance record and the limitations that remain. |
 
 ## Tests
 

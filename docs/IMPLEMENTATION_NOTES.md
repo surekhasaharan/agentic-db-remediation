@@ -1,6 +1,6 @@
 # Implementation notes
 
-What was built against [DESIGN.md](DESIGN.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), the deviations made on the way and why, the measurements, and the limitations that remain. Phases 0 to 9 are complete and committed locally. Phase 10, Cloud Run, has not started.
+What was built against [DESIGN.md](DESIGN.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), the deviations made on the way and why, the measurements, and the limitations that remain. Phases 0 to 9 are complete. Phase 10 is done: the service runs on Cloud Run in us-west1 (project `project-09440ed2-190e-4187-9b4`, one instance maximum, scale to zero), deployed from commit `be15ed8` with the design's settings, and the nine-step flow, refresh, reset, session isolation, evidence download and cold start were verified on the hosted URL.
 
 ## Deviations from the plan and the design
 
@@ -38,6 +38,7 @@ Each one is small and deliberate. None changes an invariant.
 | Container memory, `eclipse-temurin:21-jre-alpine` | 62 MiB idle, 65 MiB after the nine beats and a burst | `docker stats` |
 | Container start to healthy | under 1 s | polled `/healthz` after `docker run` |
 | Image size | 302 MB | `docker images` |
+| Cloud Run cold start, us-west1, 512 MiB, CPU boost | 2.4 s and 2.0 s to first byte in two runs, each after 18 minutes with no requests; warm 0.12 s | `curl -w %{time_starttransfer}` against `/api/health` |
 | Burst, paced (guided) | 5,000 in about 12.5 s, queue peak 2 to 5 of 256, in flight peak 2 of 8, about 1,430 unique | `burst.completed` payload |
 | Burst, unpaced (tests) | 5,000 accounted for, queue never above 256, in flight never above 8, heap flat across three runs | `burstIsBounded` |
 | Test suite | 274 tests, 0 failures, `duplicateDeliveryAppliesOnce` x100 | `./mvnw package` |
