@@ -68,7 +68,7 @@ public final class Api {
     app.sse("/api/events", client -> Sse.handle(client, registry));
     app.get("/api/evidence.json", ctx -> {
       Session s = sessionFor(ctx);
-      ctx.header("Content-Disposition", "inline; filename=\"evidence.json\"");
+      ctx.header("Content-Disposition", "attachment; filename=\"evidence.json\"");
       ctx.result(Json.write(Json.SNAKE, EvidenceExport.of(s)));
     });
     return app;

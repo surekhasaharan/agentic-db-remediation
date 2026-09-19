@@ -62,7 +62,11 @@
     let body = {};
     try { body = await r.json(); } catch (e) { /* no body */ }
     if (type === 'reset' && r.status === 200) { location.reload(); return body; }
-    if (r.status === 409 && body.error && body.error.code === 'SESSION_FULL') toast('Session full. Reset to continue.');
+    if (r.status >= 400) {
+      const err = body.error || {};
+      const why = err.code === 'INVALID_INPUT' ? err.field + ' ' + err.problem : (err.message || 'refused');
+      toast((err.code || r.status) + ': ' + why);
+    }
     return { status: r.status, body };
   }
 
@@ -81,6 +85,7 @@
     return state.snap.findings.find((f) => f.id === id) || state.snap.findings[0];
   }
   function latestPlan(f) { return f && f.plans && f.plans.length ? f.plans[f.plans.length - 1] : null; }
+  function planHash() { const p = latestPlan(active()); if (!p) throw new Error('no plan'); return p.hash; }
   function currentPersona() { return $('persona').value; }
 
   // ---- Guided script ----
@@ -101,20 +106,20 @@
     {
       persona: 'requester', title: 'Request approval',
       look: 'The plan is bound to a hash. Nothing can execute until someone else approves that exact hash.',
-      commands: () => [['request_approval', { finding_id: active().id, plan_hash: latestPlan(active()).hash }]],
+      commands: () => [['request_approval', { finding_id: active().id, plan_hash: planHash() }]],
       await: (e) => e.kind === 'approval.requested',
     },
     {
       persona: 'requester', title: 'Sam tries to approve his own request',
       look: 'Refused by code, not by an agent. Separation of duties is a deterministic gate; the refusals counter rises.',
-      commands: () => [['approve', { finding_id: active().id, plan_hash: latestPlan(active()).hash }]],
+      commands: () => [['approve', { finding_id: active().id, plan_hash: planHash() }]],
       await: (e) => e.kind === 'gate.checked' && e.payload.rule === 'approval.separation_of_duties' && e.payload.result === 'REFUSED',
     },
     {
       persona: 'dba', title: 'Dana approves, with two faults injected',
       look: 'The write is delivered twice and the database’s reply is lost. Watch the lease: one delivery wins, one is refused, and the outcome becomes unknown rather than retried blindly.',
       commands: () => [['arm_chaos', { switch: 'duplicate_delivery' }], ['arm_chaos', { switch: 'drop_response' }],
-        ['approve', { finding_id: active().id, plan_hash: latestPlan(active()).hash, comment: 'Plan v2 keeps the month-end privileges. Approved.' }]],
+        ['approve', { finding_id: active().id, plan_hash: planHash(), comment: 'Plan v2 keeps the month-end privileges. Approved.' }]],
       await: (e) => e.kind === 'operation.state_changed' && e.payload.to === 'OUTCOME_UNKNOWN',
     },
     {
@@ -145,6 +150,61 @@
 
   function exploring() { return state.step >= GUIDE.length; }
 
+  /**
+   * The guided event cursor. In guided mode the finding state, rail, counters and timeline are rendered only
+   * up to the current step's awaited event; everything later is held until the reviewer reaches it. Between
+   * steps nothing new is shown; while a step waits for its event, events show as they arrive.
+   */
+  function cursor() {
+    if (exploring()) return Infinity;
+    if (!state.pending) return state.fromSeq;
+    return state.toSeq === null ? state.lastSeq : state.toSeq;
+  }
+
+  function stageOf(st) {
+    switch (st) {
+      case 'OPEN': case 'ANALYSING': case 'PLAN_READY': return 'analyse';
+      case 'AWAITING_APPROVAL': return 'approve';
+      case 'REMEDIATING': return 'remediate';
+      case 'VERIFYING': return 'verify';
+      case 'CLOSED': case 'DRIFT_DETECTED': case 'REOPENED': return 'supervise';
+      default: return 'attention';
+    }
+  }
+
+  /** What the page shows: live state in explore mode, or the state as of the cursor, derived from events. */
+  function view() {
+    const live = active();
+    if (!live || !state.snap) return { finding: null, counters: { mutations: 0, duplicates_refused: 0, refusals: 0 } };
+    if (exploring()) return { finding: live, counters: state.snap.counters };
+    const c = cursor();
+    const evs = state.events.filter((e) => e.seq <= c);
+    let activeId = state.snap.findings[0].id;
+    for (const e of evs) if (e.kind === 'session.active_finding_changed') activeId = e.payload.to;
+    const base = state.snap.findings.find((x) => x.id === activeId) || live;
+    const f = Object.assign({}, base, { state: 'OPEN', attention_reason: null, operation: null, children: [], plans: [], requester: null, sealed_fingerprint: null });
+    let op = null;
+    for (const e of evs) {
+      if (e.finding_id === activeId) {
+        if (e.kind === 'finding.state_changed') { f.state = e.payload.to; if (e.payload.to === 'NEEDS_ATTENTION') f.attention_reason = e.payload.reason; }
+        if (e.kind === 'analysis.requested') f.requester = e.payload.actor;
+        if (e.kind === 'plan.versioned') f.plans.push(e.payload.plan);
+        if (e.kind === 'operation.created') op = { id: e.payload.operation_id, state: 'APPROVED' };
+        if (e.kind === 'operation.state_changed') op = { id: e.payload.operation_id, state: e.payload.to };
+        if (e.kind === 'evidence.sealed') f.sealed_fingerprint = e.payload.sealed_fingerprint;
+      }
+      if (e.kind === 'finding.created' && e.payload.parent_finding_id === activeId) f.children.push(e.payload.finding_id);
+    }
+    f.operation = op;
+    f.stage = stageOf(f.state);
+    const counters = {
+      mutations: evs.filter((e) => e.kind === 'operation.state_changed' && e.payload.mutation_counted === true).length,
+      duplicates_refused: evs.filter((e) => e.kind === 'delivery.duplicate_refused').length,
+      refusals: evs.filter((e) => e.kind === 'gate.checked' && e.payload.result === 'REFUSED').length,
+    };
+    return { finding: f, counters };
+  }
+
   // ---- Events ----
 
   const FOCUS_KINDS = new Set(['agent.turn', 'agent.decision', 'agent.stopped', 'gate.checked', 'tool.invoked', 'analysis.requested',
@@ -159,9 +219,9 @@
     if (e.seq <= state.lastSeq) return; // already applied
     state.lastSeq = e.seq;
     state.events.push(e);
-    if (!exploring() && state.toSeq === null && e.seq > state.fromSeq && GUIDE[state.step].await(e)) state.toSeq = e.seq;
+    if (!exploring() && state.pending && state.toSeq === null && e.seq > state.fromSeq && GUIDE[state.step].await(e)) state.toSeq = e.seq;
     if (STRUCTURAL.has(e.kind)) scheduleRefresh();
-    renderTimelineAppend(e);
+    syncTimeline();
     scheduleReveal();
     renderGuide();
   }
@@ -209,7 +269,7 @@
     $('banner-text').textContent = s.labels.banner;
     const c = $('counters');
     clear(c);
-    const cs = s.counters;
+    const cs = view().counters;
     for (const [k, label] of [['mutations', 'Mutations'], ['duplicates_refused', 'Duplicates refused'], ['refusals', 'Refusals']]) {
       add(c, add(el('div', 'counter'), el('b', null, cs[k]), el('span', null, label)));
     }
@@ -229,15 +289,17 @@
   // ---- Rendering: rail ----
 
   function attentionStage(f) {
+    const c = cursor();
     for (let i = state.events.length - 1; i >= 0; i--) {
       const e = state.events[i];
+      if (e.seq > c) continue;
       if (e.kind === 'finding.state_changed' && e.finding_id === f.id && e.payload.to === 'NEEDS_ATTENTION') return e.stage;
     }
     return 'analyse';
   }
 
   function renderRail() {
-    const f = active();
+    const f = view().finding;
     const rail = $('rail');
     clear(rail);
     if (!f) return;
@@ -266,7 +328,7 @@
   // ---- Rendering: context column ----
 
   function renderContext() {
-    const f = active();
+    const f = view().finding;
     const s = state.snap;
     const c = $('context');
     clear(c);
@@ -653,18 +715,25 @@
   }
 
   function renderTimelineAll() {
-    const ol = $('timeline');
-    clear(ol);
-    for (const e of state.events) if (passes(e)) ol.appendChild(rowFor(e));
-    state.renderedSeq = state.lastSeq;
-    scrollBottom();
+    clear($('timeline'));
+    state.renderedSeq = 0;
+    syncTimeline(true);
   }
 
-  function renderTimelineAppend(e) {
-    if (!passes(e)) { state.renderedSeq = e.seq; return; }
-    $('timeline').appendChild(rowFor(e));
-    state.renderedSeq = e.seq;
-    if (state.atBottom) scrollBottom(); else $('new-events').classList.remove('hidden');
+  /** Appends every event up to the cursor that is not yet on screen. Events are applied in seq order. */
+  function syncTimeline(fresh) {
+    const c = cursor();
+    const ol = $('timeline');
+    let appended = false;
+    for (const e of state.events) {
+      if (e.seq <= state.renderedSeq || e.seq > c) continue;
+      state.renderedSeq = e.seq;
+      if (!passes(e)) continue;
+      ol.appendChild(rowFor(e));
+      appended = true;
+    }
+    if (fresh || (appended && state.atBottom)) scrollBottom();
+    else if (appended) $('new-events').classList.remove('hidden');
   }
 
   function scrollBottom() {
@@ -747,6 +816,8 @@
     state.step += 1;
     renderEarlier();
     if (exploring()) state.fromSeq = state.lastSeq;
+    syncTimeline();
+    renderHeader(); renderRail(); renderContext();
     renderFocus();
     renderGuide();
   }
@@ -759,17 +830,18 @@
     state.revealed = 0;
     // Observe steps may already have their awaited event.
     for (const e of state.events) if (e.seq > state.fromSeq && step.await(e)) { state.toSeq = e.seq; break; }
+    syncTimeline();
+    renderHeader(); renderRail(); renderContext();
     renderFocus();
     renderGuide();
     if (step.commands) {
-      for (const [type, args] of step.commands()) {
-        const r = await send(type, step.persona || currentPersona() || 'requester', args);
-        if (r && r.status >= 400 && !(r.body.error && r.body.error.code === 'SEPARATION_OF_DUTIES')) {
-          toast(type + ' refused: ' + (r.body.error ? r.body.error.code : r.status));
-        }
-      }
+      let cmds = [];
+      try { cmds = step.commands(); } catch (e) { cmds = null; }
+      if (!cmds) toast('This step needs a plan, and the finding has none yet.');
+      else for (const [type, args] of cmds) await send(type, step.persona || currentPersona() || 'requester', args);
     }
     scheduleReveal();
+    syncTimeline();
     renderGuide();
     const next = $('next');
     if (next) next.focus();
@@ -782,36 +854,62 @@
     g.appendChild(box);
     const x = el('div', 'explore');
     const f = active();
-    const btn = (label, fn, cls) => { const b = el('button', 'btn ' + (cls || 'secondary'), label); b.type = 'button'; b.onclick = fn; return b; };
+    const plan = latestPlan(f);
+    const st = f ? f.state : 'OPEN';
+    const pretty = (v) => v.replace(/_/g, ' ');
+    // A control is available or it says why not: a disabled look, a tooltip, and a toast on click.
+    const btn = (label, fn, unavailable, cls) => {
+      const b = el('button', 'btn ' + (cls || 'secondary'), label);
+      b.type = 'button';
+      if (unavailable) {
+        b.classList.add('unavailable');
+        b.setAttribute('aria-disabled', 'true');
+        b.title = unavailable;
+        b.onclick = () => toast(label + ': ' + unavailable);
+      } else {
+        b.onclick = fn;
+      }
+      return b;
+    };
+    const needPlan = plan ? null : 'no plan exists for this finding yet';
     const lifecycle = el('div', 'grp');
     lifecycle.appendChild(el('span', 'muted', 'Lifecycle'));
-    lifecycle.appendChild(btn('Start analysis', () => send('start_analysis', currentPersona(), { finding_id: active().id })));
-    lifecycle.appendChild(btn('Request approval', () => send('request_approval', currentPersona(), { finding_id: active().id, plan_hash: latestPlan(active()).hash })));
-    lifecycle.appendChild(btn('Approve', () => send('approve', currentPersona(), { finding_id: active().id, plan_hash: latestPlan(active()).hash })));
-    lifecycle.appendChild(btn('Reject', () => send('reject', currentPersona(), { finding_id: active().id, plan_hash: latestPlan(active()).hash })));
-    lifecycle.appendChild(btn('Trigger drift', () => send('trigger_drift', currentPersona(), { finding_id: active().id })));
+    lifecycle.appendChild(btn('Start analysis', () => send('start_analysis', currentPersona(), { finding_id: f.id }),
+      st === 'OPEN' ? null : 'available when the finding is OPEN, it is ' + pretty(st)));
+    lifecycle.appendChild(btn('Request approval', () => send('request_approval', currentPersona(), { finding_id: f.id, plan_hash: plan.hash }),
+      st !== 'PLAN_READY' ? 'available when the finding is PLAN READY, it is ' + pretty(st) : needPlan));
+    lifecycle.appendChild(btn('Approve', () => send('approve', currentPersona(), { finding_id: f.id, plan_hash: plan.hash }),
+      st !== 'AWAITING_APPROVAL' ? 'available when the finding is AWAITING APPROVAL, it is ' + pretty(st) : needPlan));
+    lifecycle.appendChild(btn('Reject', () => send('reject', currentPersona(), { finding_id: f.id, plan_hash: plan.hash }),
+      st !== 'AWAITING_APPROVAL' ? 'available when the finding is AWAITING APPROVAL, it is ' + pretty(st) : needPlan));
+    lifecycle.appendChild(btn('Trigger drift', () => send('trigger_drift', currentPersona(), { finding_id: f.id }),
+      st === 'CLOSED' ? null : 'available when the finding is CLOSED, it is ' + pretty(st)));
     x.appendChild(lifecycle);
     const faults = el('div', 'grp');
     faults.appendChild(el('span', 'muted', 'Inject'));
-    for (const sw of ['duplicate_delivery', 'drop_response', 'abort_before_commit']) faults.appendChild(btn(sw.replace(/_/g, ' '), () => send('arm_chaos', currentPersona(), { switch: sw })));
+    const armed = state.snap && state.snap.chaos ? state.snap.chaos.armed : [];
+    for (const sw of ['duplicate_delivery', 'drop_response', 'abort_before_commit']) {
+      faults.appendChild(btn(sw.replace(/_/g, ' ') + (armed.includes(sw) ? ' (armed)' : ''), () => send('arm_chaos', currentPersona(), { switch: sw }),
+        armed.includes(sw) ? 'already armed; it fires once at the next write' : null));
+    }
     x.appendChild(faults);
     const kill = el('div', 'grp');
     const on = state.snap && state.snap.kill_switch;
-    kill.appendChild(btn(on ? 'Kill switch: on' : 'Kill switch: off', () => send('kill_switch', currentPersona(), { on: !on })));
+    kill.appendChild(btn(on ? 'Kill switch: on' : 'Kill switch: off', () => send('kill_switch', currentPersona(), { on: !on }), null));
     x.appendChild(kill);
     const burst = el('div', 'grp');
     const count = el('input');
     count.type = 'number'; count.min = '1'; count.max = '5000'; count.value = '5000'; count.setAttribute('aria-label', 'Burst count');
     burst.appendChild(count);
-    burst.appendChild(btn('Burst', () => send('start_burst', currentPersona(), { count: Number(count.value) || 5000 })));
+    burst.appendChild(btn('Burst', () => send('start_burst', currentPersona(), { count: Number(count.value) || 5000 }),
+      state.snap && state.snap.burst_running ? 'a burst is already running' : null));
     x.appendChild(burst);
     const exp = el('div', 'grp');
-    const a = el('a', 'btn secondary', 'Evidence export');
-    a.href = '/api/evidence.json'; a.target = '_blank'; a.rel = 'noopener';
+    const a = el('a', 'btn secondary', 'Export evidence');
+    a.href = '/api/evidence.json'; a.download = 'evidence.json'; a.title = 'Downloads evidence.json for this session';
     exp.appendChild(a);
     x.appendChild(exp);
     g.appendChild(x);
-    if (!f) return;
   }
 
   // ---- About sheet ----

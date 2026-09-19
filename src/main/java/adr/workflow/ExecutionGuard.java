@@ -117,13 +117,14 @@ public final class ExecutionGuard {
   public static Handled applied(Session s, RunContext run, Operation op, boolean alreadyApplied, adr.target.PgState.LedgerRow row, String after) {
     OpState cur = op.state();
     if (cur.state() != OperationState.APPLIED) op.compareAndSet(cur, cur.applied());
-    if (!alreadyApplied && !op.mutationCounted()) {
+    boolean counted = !alreadyApplied && !op.mutationCounted();
+    if (counted) {
       op.mutationCounted(true);
       s.counters().mutations.incrementAndGet();
     }
     stateEvent(s, run, op, OperationState.APPLIED, alreadyApplied
         ? "Applied: the ledger already held this operation, no second effect"
-        : "Applied: change and ledger row committed together");
+        : "Applied: change and ledger row committed together", Map.of("mutation_counted", counted));
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("operation_id", op.id().toString());
     data.put("applied", true);
@@ -174,10 +175,20 @@ public final class ExecutionGuard {
   }
 
   public static void stateEvent(Session s, RunContext run, Operation op, OperationState to, String summary) {
+    stateEvent(s, run, op, to, summary, Map.of());
+  }
+
+  public static void stateEvent(Session s, RunContext run, Operation op, OperationState to, String summary, Map<String, Object> extra) {
     List<String> h = op.history();
     String from = h.size() >= 2 ? h.get(h.size() - 2) : h.get(0);
+    Map<String, Object> p = new LinkedHashMap<>(extra);
+    p.put("rule", "operation.transition");
+    p.put("result", "PASS");
+    p.put("operation_id", op.id().toString());
+    p.put("from", from);
+    p.put("to", to.name());
+    p.put("attempt", op.state().attempt());
     s.timeline().append(TimelineEvent.of(run.findingId, ActorType.gate, "execution_guard", "remediate", "operation.state_changed",
-        summary, Map.of("rule", "operation.transition", "result", "PASS", "operation_id", op.id().toString(),
-            "from", from, "to", to.name(), "attempt", op.state().attempt()), Labels.PLATFORM));
+        summary, p, Labels.PLATFORM));
   }
 }
