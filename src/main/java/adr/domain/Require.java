@@ -75,5 +75,5 @@ public final class Require {
   public static final Pattern OBJECT_NAME = Pattern.compile("^[a-z_][a-z0-9_]{0,62}(\\([a-z, ]*\\))?$");
   public static final Pattern UUID_REF = Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
   public static final Pattern HEX64 = Pattern.compile("^[0-9a-f]{64}$");
-  public static final Pattern DOC_ID = Pattern.compile("^[A-Z]{2,5}-[0-9]{3,5}$");
+  public static final Pattern DOC_ID = Pattern.compile("^[A-Z]{2,5}-[0-9]{2,5}$");
 }

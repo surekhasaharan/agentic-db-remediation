@@ -1,0 +1,3 @@
+package adr.domain;
+
+public enum OperationState { APPROVED, EXECUTING, APPLIED, FAILED_NOT_APPLIED, OUTCOME_UNKNOWN, NEEDS_HUMAN }

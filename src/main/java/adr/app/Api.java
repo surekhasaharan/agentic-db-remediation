@@ -1,7 +1,7 @@
 package adr.app;
 
+import adr.domain.InvalidInput;
 import adr.domain.Json;
-import adr.domain.Labels;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Cookie;
@@ -11,7 +11,6 @@ import io.javalin.http.staticfiles.Location;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Six endpoints, one event envelope, one page. */
@@ -19,10 +18,14 @@ public final class Api {
   public static final String COOKIE = "adr_session";
 
   private final SessionRegistry registry;
+  private final Commands commands;
+  private final Map<String, Object> health;
   private final String indexHtml;
 
-  public Api(SessionRegistry registry) {
+  public Api(SessionRegistry registry, Commands commands, Map<String, Object> health) {
     this.registry = registry;
+    this.commands = commands;
+    this.health = health;
     this.indexHtml = resource("/public/index.html");
   }
 
@@ -42,22 +45,32 @@ public final class Api {
       sessionFor(ctx);
       ctx.html(indexHtml);
     });
-    app.get("/healthz", ctx -> ctx.result(Json.write(Json.SNAKE, Map.of("status", "ok"))));
+    app.get("/healthz", ctx -> ctx.result(Json.write(Json.SNAKE, health)));
     app.get("/api/state", ctx -> {
       Session s = sessionFor(ctx);
-      ctx.result(Json.write(Json.SNAKE, state(s)));
+      ctx.result(Json.write(Json.SNAKE, Snapshot.of(s)));
+    });
+    app.post("/api/commands", ctx -> {
+      Session s = sessionFor(ctx);
+      Commands.Result r = commands.handle(s, ctx.body(), ctx.header("Idempotency-Key"));
+      ctx.status(r.status()).result(Json.write(Json.SNAKE, r.body()));
     });
     // The stream commits its headers as soon as it opens, so query validation happens before it.
     app.before("/api/events", ctx -> {
       try {
         Sse.parseAfter(ctx.queryParam("after"));
-      } catch (adr.domain.InvalidInput e) {
+      } catch (InvalidInput e) {
         ctx.status(400).result(Json.write(Json.SNAKE, Map.of("error",
             Map.of("code", "INVALID_INPUT", "field", e.field(), "problem", e.problem()))));
         ctx.skipRemainingHandlers();
       }
     });
     app.sse("/api/events", client -> Sse.handle(client, registry));
+    app.get("/api/evidence.json", ctx -> {
+      Session s = sessionFor(ctx);
+      ctx.header("Content-Disposition", "inline; filename=\"evidence.json\"");
+      ctx.result(Json.write(Json.SNAKE, EvidenceExport.of(s)));
+    });
     return app;
   }
 
@@ -69,16 +82,6 @@ public final class Api {
       ctx.cookie(c);
     }
     return s;
-  }
-
-  Map<String, Object> state(Session s) {
-    Map<String, Object> m = new LinkedHashMap<>();
-    m.put("session_epoch", s.epoch());
-    m.put("last_seq", s.timeline().lastSeq());
-    m.put("can_reset", true);
-    m.put("labels", Map.of("banner", Labels.BANNER, "agent_mode", Labels.AGENT_MODE,
-        "target_mode", Labels.TARGET_MODE, "persistence", Labels.PERSISTENCE));
-    return m;
   }
 
   static String resource(String path) {
