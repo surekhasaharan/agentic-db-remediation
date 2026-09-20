@@ -60,4 +60,3 @@ Each one is small and deliberate. None changes an invariant.
 - In the paced guided burst the workers outrun the generator, so the queue gauge rarely climbs above single digits. The bounds are enforced regardless, and the unpaced test shows the same limits under load.
 - Rollback, live model mode, a real PostgreSQL target, authentication and persistence are deferred, as decision D1 and the design's deferred list state.
 - The simulation does not model PostgreSQL's grantor rules on revoke, MVCC, connections or a real lock manager. The banner and About sheet say so.
-- Cloud Run has not been exercised. The event stream through Cloud Run's proxy is the one behaviour local acceptance cannot cover.
