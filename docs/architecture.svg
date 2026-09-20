@@ -1,195 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 840" width="1240" height="840" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="1200" height="640" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="15">
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#3a3a37"/>
-    </marker>
-    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#b7791f"/>
     </marker>
   </defs>
   <style>
-    .title { font-size: 20px; font-weight: 650; fill: #1f1f1d; }
-    .sub { font-size: 13px; fill: #6b6a66; }
-    .box { fill: #ffffff; stroke: #c9c7c0; stroke-width: 1.2; rx: 10; }
-    .region { fill: #f6f5f2; stroke: #dcdad4; stroke-width: 1.2; rx: 14; }
-    .agent { fill: #eef1fb; stroke: #3b5bdb; }
-    .gate { fill: #f3f2ee; stroke: #2f2f2c; }
-    .human { fill: #f8f2ec; stroke: #6f4e37; }
-    .sim { fill: #fbf3e1; stroke: #b7791f; }
-    .h { font-weight: 650; fill: #1f1f1d; font-size: 14px; }
-    .t { fill: #3a3a37; }
-    .m { fill: #6b6a66; font-size: 12px; }
-    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; fill: #3a3a37; }
-    .tag { font-size: 11px; font-weight: 600; }
-    .edge { stroke: #3a3a37; stroke-width: 1.4; fill: none; marker-end: url(#arrow); }
-    .edge-amber { stroke: #b7791f; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; marker-end: url(#arrow-amber); }
-    .edge-label { font-size: 11.5px; fill: #3a3a37; }
+    .title { font-size: 24px; font-weight: 650; fill: #1f1f1d; }
+    .sub { font-size: 15px; fill: #6b6a66; }
+    .layer { stroke-width: 1.4; rx: 16; }
+    .agentic { fill: #eef1fb; stroke: #3b5bdb; }
+    .reliability { fill: #f3f2ee; stroke: #2f2f2c; }
+    .card { fill: #ffffff; stroke: #c9c7c0; stroke-width: 1.2; rx: 12; }
+    .layer-name { font-size: 18px; font-weight: 650; }
+    .layer-note { font-size: 14px; fill: #6b6a66; }
+    .name { font-size: 16px; font-weight: 650; fill: #1f1f1d; }
+    .what { font-size: 13.5px; fill: #3a3a37; }
+    .end { fill: #ffffff; stroke: #c9c7c0; stroke-width: 1.2; rx: 12; }
+    .human { fill: #f8f2ec; stroke: #6f4e37; stroke-width: 1.4; rx: 12; }
+    .db { fill: #fbf3e1; stroke: #b7791f; stroke-width: 1.4; rx: 12; }
+    .edge { stroke: #3a3a37; stroke-width: 1.6; fill: none; marker-end: url(#a); }
+    .label { font-size: 13px; fill: #3a3a37; }
   </style>
 
-  <!-- Title -->
-  <text x="24" y="34" class="title">Agentic Database Security Remediation: high-level design</text>
-  <text x="24" y="54" class="sub">Agents propose. Deterministic code decides. A human approves. Everything simulated is labelled; every control runs live.</text>
+  <text x="40" y="46" class="title">Agentic Database Security Remediation</text>
+  <text x="40" y="70" class="sub">Agents propose. The reliability layer decides. A human approves. From finding to verified recovery.</text>
 
-  <!-- Browser -->
-  <rect x="24" y="80" width="250" height="150" class="box"/>
-  <text x="40" y="104" class="h">Browser, one page</text>
-  <text x="40" y="126" class="t">Lifecycle rail, focus panel, timeline</text>
-  <text x="40" y="144" class="t">Guided script, nine steps</text>
-  <text x="40" y="162" class="t">Four visual forms by actor_type:</text>
-  <text x="40" y="180" class="m">agent card, gate strip, signature, fault notice</text>
-  <text x="40" y="204" class="mono">HTML, CSS, JS. EventSource + fetch</text>
+  <!-- Finding in -->
+  <rect x="40" y="250" width="130" height="80" class="end"/>
+  <text x="105" y="284" class="name" text-anchor="middle">Finding</text>
+  <text x="105" y="306" class="what" text-anchor="middle">excessive privilege</text>
 
-  <!-- API -->
-  <rect x="330" y="80" width="250" height="150" class="box"/>
-  <text x="346" y="104" class="h">Javalin API</text>
-  <text x="346" y="126" class="mono">POST /api/commands</text>
-  <text x="346" y="142" class="mono">GET  /api/state</text>
-  <text x="346" y="158" class="mono">GET  /api/events  (SSE, epoch:seq)</text>
-  <text x="346" y="174" class="mono">GET  /api/evidence.json</text>
-  <text x="346" y="190" class="mono">GET  /api/health</text>
-  <text x="346" y="214" class="m">Admission: validate, state table, session lock</text>
+  <!-- Agentic layer -->
+  <rect x="210" y="110" width="760" height="190" class="layer agentic"/>
+  <text x="232" y="140" class="layer-name" fill="#3b5bdb">Agentic layer</text>
+  <text x="232" y="160" class="layer-note">Four agents reason and propose. They act only through allowlisted tools and never change state themselves.</text>
 
-  <!-- Sessions -->
-  <rect x="636" y="80" width="250" height="150" class="box"/>
-  <text x="652" y="104" class="h">Sessions</text>
-  <text x="652" y="126" class="t">SessionRegistry: cookie, at most 20,</text>
-  <text x="652" y="142" class="t">30-minute expiry, oldest idle evicted</text>
-  <text x="652" y="162" class="t">One Session per reviewer: private</text>
-  <text x="652" y="178" class="t">target, stores, timeline, epoch, counters</text>
-  <text x="652" y="204" class="m">Reset only from a stable state; the page reloads</text>
+  <rect x="232" y="180" width="170" height="96" class="card"/>
+  <text x="317" y="210" class="name" text-anchor="middle">Analysis</text>
+  <text x="317" y="232" class="what" text-anchor="middle">reads the role, telemetry</text>
+  <text x="317" y="250" class="what" text-anchor="middle">and history; proposes a plan</text>
 
-  <!-- Start-up -->
-  <rect x="942" y="80" width="274" height="150" class="box"/>
-  <text x="958" y="104" class="h">Start-up, before the port opens</text>
-  <text x="958" y="126" class="t">1. Validate seeds and policy</text>
-  <text x="958" y="142" class="t">2. RecordingValidator: every reachable</text>
-  <text x="958" y="158" class="t">    trigger has a recorded turn</text>
-  <text x="958" y="174" class="t">3. Golden flow, four fault configurations</text>
-  <text x="958" y="190" class="t">    run headless, zero recording misses</text>
-  <text x="958" y="214" class="m">Any failure exits before serving</text>
+  <rect x="418" y="180" width="170" height="96" class="card"/>
+  <text x="503" y="210" class="name" text-anchor="middle">Remediation</text>
+  <text x="503" y="232" class="what" text-anchor="middle">applies the approved plan</text>
+  <text x="503" y="250" class="what" text-anchor="middle">by reference, once</text>
 
-  <line x1="274" y1="155" x2="330" y2="155" class="edge"/>
-  <text x="280" y="148" class="edge-label">REST, SSE</text>
-  <line x1="580" y1="155" x2="636" y2="155" class="edge"/>
+  <rect x="604" y="180" width="170" height="96" class="card"/>
+  <text x="689" y="210" class="name" text-anchor="middle">Verification</text>
+  <text x="689" y="232" class="what" text-anchor="middle">interprets checks computed</text>
+  <text x="689" y="250" class="what" text-anchor="middle">before it sees them</text>
 
-  <!-- Process region -->
-  <rect x="24" y="258" width="1192" height="562" class="region"/>
-  <text x="40" y="284" class="h">One Java 21 process, per session</text>
+  <rect x="790" y="180" width="160" height="96" class="card"/>
+  <text x="870" y="210" class="name" text-anchor="middle">Supervision</text>
+  <text x="870" y="232" class="what" text-anchor="middle">classifies drift and</text>
+  <text x="870" y="250" class="what" text-anchor="middle">recommends reopening</text>
 
-  <!-- Agents column -->
-  <rect x="44" y="304" width="300" height="200" class="box agent"/>
-  <text x="60" y="328" class="h">Agents propose</text>
-  <text x="60" y="350" class="t">AgentRunner: the loop a live model drives</text>
-  <text x="60" y="366" class="m">step budgets, two agent slots, safe stop</text>
-  <text x="60" y="390" class="t">ModelClient  ->  RecordedModelClient</text>
-  <text x="60" y="406" class="m">turns keyed by trigger: start, ok:tool, error:tool:CODE</text>
-  <text x="60" y="422" class="m">substitutes $ev, $op, $finding from the live run</text>
-  <text x="60" y="446" class="t">Four agents: analysis (A and B), remediation,</text>
-  <text x="60" y="462" class="t">verification, supervision</text>
-  <rect x="60" y="474" width="82" height="18" rx="9" fill="#ffffff" stroke="#3b5bdb"/>
-  <text x="70" y="487" class="tag" fill="#3b5bdb">recorded</text>
-  <text x="152" y="487" class="m">extension point: LiveModelClient</text>
+  <!-- Human approval -->
+  <rect x="1010" y="180" width="150" height="96" class="human"/>
+  <text x="1085" y="210" class="name" text-anchor="middle" fill="#6f4e37">Human approval</text>
+  <text x="1085" y="232" class="what" text-anchor="middle">a named approver binds</text>
+  <text x="1085" y="250" class="what" text-anchor="middle">to the exact plan</text>
 
-  <!-- Human -->
-  <rect x="44" y="524" width="300" height="118" class="box human"/>
-  <text x="60" y="548" class="h">Humans approve</text>
-  <text x="60" y="570" class="t">Sam, requester. Dana, DBA.</text>
-  <text x="60" y="586" class="t">Approval binds to a plan hash. Separation of</text>
-  <text x="60" y="602" class="t">duties, approver persona, 15-minute expiry, voiding</text>
-  <rect x="60" y="614" width="190" height="18" rx="9" fill="#ffffff" stroke="#6f4e37"/>
-  <text x="70" y="627" class="tag" fill="#6f4e37">demo persona, not authenticated</text>
+  <!-- Reliability layer -->
+  <rect x="210" y="330" width="760" height="190" class="layer reliability"/>
+  <text x="232" y="360" class="layer-name" fill="#2f2f2c">Reliability layer</text>
+  <text x="232" y="380" class="layer-note">Deterministic controls enforce policy, guard every write and prove the outcome. Nothing executes without them.</text>
 
-  <!-- Chaos -->
-  <rect x="44" y="662" width="300" height="118" class="box sim"/>
-  <text x="60" y="686" class="h">Injected faults</text>
-  <text x="60" y="708" class="t">Duplicate delivery: two threads race the lease</text>
-  <text x="60" y="724" class="t">Drop response: ResponseLost after commit</text>
-  <text x="60" y="740" class="t">Abort before commit: nothing changes</text>
-  <text x="60" y="756" class="t">Out-of-band drift: OutOfBandClient re-grants</text>
-  <text x="60" y="772" class="m">one-shot switches; each firing is an event</text>
+  <rect x="232" y="400" width="136" height="96" class="card"/>
+  <text x="300" y="430" class="name" text-anchor="middle">Leases</text>
+  <text x="300" y="452" class="what" text-anchor="middle">one executor, even</text>
+  <text x="300" y="470" class="what" text-anchor="middle">under duplicates</text>
 
-  <!-- Deterministic core -->
-  <rect x="380" y="304" width="500" height="476" class="box gate"/>
-  <text x="396" y="328" class="h">Deterministic code decides</text>
+  <rect x="380" y="400" width="136" height="96" class="card"/>
+  <text x="448" y="430" class="name" text-anchor="middle">Idempotency</text>
+  <text x="448" y="452" class="what" text-anchor="middle">change and marker</text>
+  <text x="448" y="470" class="what" text-anchor="middle">commit together</text>
 
-  <text x="396" y="354" class="h" font-size="13px">ToolBroker, eleven steps per call</text>
-  <text x="396" y="372" class="m">allowlist, kill switch, strict argument validation, references,</text>
-  <text x="396" y="388" class="m">protected targets, preconditions, policy, handler, evidence, event</text>
-  <text x="396" y="410" class="t">Policy: deny by default, explicit entry per tool,</text>
-  <text x="396" y="426" class="t">plan admission, approval rules, SHA-256 as version</text>
-  <text x="396" y="448" class="t">Guards: plan lint, completeness, justification, scenario</text>
-  <text x="396" y="464" class="t">coverage, citation, decision legality, verdict, reopen legality</text>
-  <text x="396" y="486" class="t">Fifteen tools. Write tools take a reference only;</text>
-  <text x="396" y="502" class="t">the broker loads the approved plan by hash</text>
+  <rect x="528" y="400" width="146" height="96" class="card"/>
+  <text x="601" y="430" class="name" text-anchor="middle">Reconciliation</text>
+  <text x="601" y="452" class="what" text-anchor="middle">uncertain outcomes are</text>
+  <text x="601" y="470" class="what" text-anchor="middle">resolved, not retried</text>
 
-  <line x1="396" y1="516" x2="864" y2="516" stroke="#c9c7c0"/>
+  <rect x="686" y="400" width="130" height="96" class="card"/>
+  <text x="751" y="430" class="name" text-anchor="middle">Verification</text>
+  <text x="751" y="452" class="what" text-anchor="middle">assertions, probes,</text>
+  <text x="751" y="470" class="what" text-anchor="middle">app scenarios</text>
 
-  <text x="396" y="540" class="h" font-size="13px">Workflow</text>
-  <text x="396" y="558" class="t">Lifecycle: the one door for finding moves,</text>
-  <text x="396" y="574" class="t">compare-and-set with its events in one critical section</text>
-  <text x="396" y="596" class="t">ExecutionGuard: one operation per plan, compare-and-set lease,</text>
-  <text x="396" y="612" class="t">outcome classification, OUTCOME_UNKNOWN until reconciled</text>
-  <text x="396" y="634" class="t">Verification: facts computed before the verifier's turn</text>
-  <text x="396" y="650" class="t">DriftPoller: fingerprint poll every 2 s, reseal or reopen</text>
-  <text x="396" y="666" class="t">BurstPipeline: queue 256, 8 workers, 2 agent slots, live gauges</text>
-  <text x="396" y="682" class="t">GoldenFlow: the guided run, headless</text>
+  <rect x="828" y="400" width="122" height="96" class="card"/>
+  <text x="889" y="430" class="name" text-anchor="middle">Drift detection</text>
+  <text x="889" y="452" class="what" text-anchor="middle">fingerprint poll,</text>
+  <text x="889" y="470" class="what" text-anchor="middle">reopen on change</text>
 
-  <line x1="396" y1="698" x2="864" y2="698" stroke="#c9c7c0"/>
-  <text x="396" y="722" class="h" font-size="13px">Finding lifecycle</text>
-  <text x="396" y="740" class="mono">OPEN > ANALYSING > PLAN_READY > AWAITING_APPROVAL > REMEDIATING</text>
-  <text x="396" y="756" class="mono">> VERIFYING > CLOSED > DRIFT_DETECTED > REOPENED (child in OPEN)</text>
-  <text x="396" y="772" class="m">NEEDS_ATTENTION is where it stops, visibly, when it cannot proceed safely</text>
+  <!-- Database -->
+  <rect x="1010" y="400" width="150" height="96" class="db"/>
+  <text x="1085" y="430" class="name" text-anchor="middle" fill="#b7791f">PostgreSQL</text>
+  <text x="1085" y="452" class="what" text-anchor="middle">the only thing that</text>
+  <text x="1085" y="470" class="what" text-anchor="middle">changes, one transaction</text>
 
-  <!-- Target -->
-  <rect x="916" y="304" width="300" height="218" class="box sim"/>
-  <text x="932" y="328" class="h">Target: TargetDatabase</text>
-  <text x="932" y="350" class="t">SimulatedPgTarget: one immutable PgState in an</text>
-  <text x="932" y="366" class="t">AtomicReference, one ReentrantLock as the advisory lock</text>
-  <text x="932" y="388" class="t">Roles, memberships, ownership, grants, privilege rule,</text>
-  <text x="932" y="404" class="t">ledger keyed by operation id, applied plan hashes</text>
-  <text x="932" y="426" class="t">apply: validate, precondition, then one reference swap</text>
-  <text x="932" y="442" class="t">with the ledger row; status takes the same lock</text>
-  <text x="932" y="464" class="t">Caller capabilities enforced per agent identity</text>
-  <rect x="932" y="478" width="130" height="18" rx="9" fill="#ffffff" stroke="#b7791f"/>
-  <text x="942" y="491" class="tag" fill="#b7791f">Simulated PostgreSQL</text>
-  <text x="932" y="512" class="m">extension point: JdbcPostgresTarget</text>
+  <!-- Outcome -->
+  <rect x="40" y="440" width="130" height="80" class="end"/>
+  <text x="105" y="474" class="name" text-anchor="middle">Verified</text>
+  <text x="105" y="494" class="name" text-anchor="middle">recovery</text>
 
-  <!-- Stores -->
-  <rect x="916" y="540" width="300" height="240" class="box"/>
-  <text x="932" y="564" class="h">Stores: in memory</text>
-  <text x="932" y="586" class="t">Timeline: append-only, seq numbers, backlog plus</text>
-  <text x="932" y="602" class="t">bounded live queue per subscriber, 5,000-event cap</text>
-  <text x="932" y="624" class="t">Findings, Plans, Approvals, Operations, EvidenceLog</text>
-  <text x="932" y="646" class="t">Corpus: eight documents, one poisoned, an overlay</text>
-  <text x="932" y="662" class="t">for outcomes written back at close</text>
-  <text x="932" y="684" class="t">Telemetry, job runs, audit feed: seeded per session</text>
-  <rect x="932" y="700" width="150" height="18" rx="9" fill="#ffffff" stroke="#6b6a66"/>
-  <text x="942" y="713" class="tag" fill="#6b6a66">seeded, labelled by source</text>
-  <text x="932" y="740" class="m">extension point: PostgresStores</text>
-  <text x="932" y="764" class="m">Nothing survives reset, expiry or restart, by design</text>
+  <!-- Edges -->
+  <line x1="170" y1="290" x2="210" y2="230" class="edge"/>
+  <line x1="950" y1="228" x2="1010" y2="228" class="edge"/>
+  <text x="980" y="216" class="label" text-anchor="middle">plan</text>
+  <line x1="1085" y1="276" x2="1085" y2="400" class="edge"/>
+  <text x="1096" y="342" class="label">approved</text>
+  <line x1="500" y1="300" x2="500" y2="330" class="edge"/>
+  <text x="490" y="320" class="label" text-anchor="end">tool calls</text>
+  <line x1="680" y1="330" x2="680" y2="300" class="edge"/>
+  <text x="690" y="320" class="label">results, refusals</text>
+  <line x1="970" y1="448" x2="1010" y2="448" class="edge"/>
+  <line x1="1010" y1="470" x2="970" y2="470" class="edge"/>
+  <line x1="210" y1="470" x2="170" y2="470" class="edge"/>
+  <text x="190" y="458" class="label" text-anchor="middle">evidence</text>
 
-  <!-- Edges within the process -->
-  <line x1="344" y1="376" x2="380" y2="376" class="edge"/>
-  <text x="346" y="370" class="edge-label" font-size="10.5px">calls</text>
-  <line x1="380" y1="436" x2="344" y2="436" class="edge"/>
-  <text x="346" y="430" class="edge-label" font-size="10.5px">results</text>
-
-  <line x1="344" y1="580" x2="380" y2="580" class="edge"/>
-  <text x="346" y="574" class="edge-label" font-size="10.5px">approve</text>
-
-  <line x1="880" y1="420" x2="916" y2="420" class="edge"/>
-  <text x="882" y="414" class="edge-label">as caller</text>
-  <line x1="880" y1="620" x2="916" y2="620" class="edge"/>
-  <text x="882" y="614" class="edge-label">events</text>
-
-  <path d="M344,700 C372,700 372,610 380,610" class="edge-amber"/>
-  <text x="346" y="716" class="edge-label" fill="#b7791f" font-size="10.5px">seams</text>
-  <path d="M344,760 L360,760 L360,802 L898,802 L898,505 L916,505" class="edge-amber"/>
-  <text x="540" y="796" class="edge-label" fill="#b7791f">out of band: reaches the target without the broker</text>
-
-  <!-- Legend -->
-  <rect x="640" y="238" width="576" height="14" fill="none"/>
-  <rect x="896" y="240" width="12" height="12" class="box agent"/><text x="912" y="250" class="m">agent, recorded</text>
-  <rect x="998" y="240" width="12" height="12" class="box gate"/><text x="1014" y="250" class="m">deterministic, live</text>
-  <rect x="1116" y="240" width="12" height="12" class="box sim"/><text x="1132" y="250" class="m">simulated or injected</text>
+  <text x="40" y="600" class="sub">Demo mode: recorded agents, a simulated PostgreSQL target and demo personas. The reliability layer runs live on every step.</text>
 </svg>
