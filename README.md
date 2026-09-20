@@ -103,6 +103,7 @@ The documents under `docs/` are read in this order. The PRD describes the full p
 
 | Document | Purpose |
 | --- | --- |
+| `docs/architecture.svg` | One-page diagram of the high-level design: the page, the API, sessions, start-up checks, and inside the process the agents that propose, the deterministic core that decides, the humans who approve, the injected faults, the simulated target and the in-memory stores, with the three extension points. |
 | `docs/PRD.md` | The original product idea and competitive analysis: the full agentic remediation product with live agents and a real database. It was scoped down for this demo and does not describe the current design. |
 | `docs/DESIGN.md` | The authoritative specification of this demo (called the D0 prototype in the documents): invariants, the simulated target, recorded agents, the lifecycle, fault handling, the page, tests and the Definition of Done. Where it conflicts with the PRD, the design wins. |
 | `docs/IMPLEMENTATION_RULES.md` | Precedence between the documents, scope boundaries, workflow, git and completion rules. |
