@@ -1,6 +1,6 @@
 # Agentic Database Security Remediation
 
-*From finding to verified recovery.* D0 prototype.
+*From finding to verified recovery.* A self-contained demo application.
 
 A self-contained demonstration of an agentic PostgreSQL privilege remediation system: agents propose, deterministic code decides, a human approves, faults are injected and recovered from, verification and drift supervision run for real. One Java 21 process, Javalin, Jackson and a vanilla web page. No account, key, database or network access is needed.
 
@@ -104,7 +104,7 @@ The documents under `docs/` are read in this order. The PRD describes the full p
 | Document | Purpose |
 | --- | --- |
 | `docs/PRD.md` | The original product idea and competitive analysis: the full agentic remediation product with live agents and a real database. It was scoped down for this demo and does not describe the current design. |
-| `docs/DESIGN.md` | The authoritative specification of the D0 prototype: invariants, the simulated target, recorded agents, the lifecycle, fault handling, the page, tests and the Definition of Done. Where it conflicts with the PRD, the design wins. |
+| `docs/DESIGN.md` | The authoritative specification of this demo (called the D0 prototype in the documents): invariants, the simulated target, recorded agents, the lifecycle, fault handling, the page, tests and the Definition of Done. Where it conflicts with the PRD, the design wins. |
 | `docs/IMPLEMENTATION_RULES.md` | Precedence between the documents, scope boundaries, workflow, git and completion rules. |
 | `docs/IMPLEMENTATION_PLAN.md` | The phased build plan agreed before any code: packages, phases, tests per phase, the guided journey, decisions and the Definition of Done. |
 | `docs/IMPLEMENTATION_NOTES.md` | What was built, every deviation from the plan and the design with its reason, the measurements, the acceptance record and the limitations that remain. |
@@ -130,4 +130,10 @@ More detail, including every deviation from the design and the measurements, is 
 
 ## Cloud Run
 
-Deployment to Cloud Run is deferred. It is a separate step that runs only after explicit approval, with the project and region supplied at that time, and it changes nothing in the code: scale to zero, maximum one instance, no other cloud resource. See `docs/IMPLEMENTATION_PLAN.md`, phase 10.
+The demo runs on Cloud Run as one container with no other cloud resource: scale to zero, at most one instance because every session lives in that instance's memory, request-based billing so the event stream keeps the CPU while a reviewer is watching, and a long request timeout for the stream. Deploying is one command from the repository root, with your own project and region:
+
+```bash
+gcloud run deploy adr-demo --source . --project PROJECT --region REGION --allow-unauthenticated --min-instances 0 --max-instances 1 --concurrency 80 --cpu 1 --memory 512Mi --cpu-boost --timeout 3600
+```
+
+Cloud Build builds the image from the Dockerfile, so the test suite runs before any image exists. On the hosted URL use `/api/health` for the self-check result, since Cloud Run's front end answers `/healthz` itself. A scaled-to-zero instance answers its first request in about two seconds; the page shows "Waking the demo" until then. Sessions vanish when the instance is recycled, and the page offers "Start again".

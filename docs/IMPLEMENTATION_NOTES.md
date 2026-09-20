@@ -1,6 +1,6 @@
 # Implementation notes
 
-What was built against [DESIGN.md](DESIGN.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), the deviations made on the way and why, the measurements, and the limitations that remain. Phases 0 to 9 are complete. Phase 10 is done: the service runs on Cloud Run in us-west1 (project `project-09440ed2-190e-4187-9b4`, one instance maximum, scale to zero), deployed from commit `be15ed8` with the design's settings, and the nine-step flow, refresh, reset, session isolation, evidence download and cold start were verified on the hosted URL.
+What was built against [DESIGN.md](DESIGN.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), the deviations made on the way and why, the measurements, and the limitations that remain. Phases 0 to 9 are complete. Phase 10 is done: the service runs on Cloud Run in us-west1 (one instance maximum, scale to zero), deployed from commit `be15ed8` with the design's settings, and the nine-step flow, refresh, reset, session isolation, evidence download and cold start were verified on the hosted URL.
 
 ## Deviations from the plan and the design
 
