@@ -16,8 +16,10 @@ public final class Labels {
   public static final String CORPUS = "Knowledge corpus";
   public static final String APP_SIM = "Application simulator";
 
+  public static final String PRODUCT = "Agentic Database Security Remediation";
+  public static final String TAGLINE = "From finding to verified recovery";
   public static final String BANNER =
-      "Prototype: recorded agent responses, a simulated PostgreSQL target and demo personas. "
-          + "Tools, policy, guards, workflow and fault handling run live.";
+      "Demo mode: Recorded agents \u2022 Simulated PostgreSQL target \u2022 Demo personas \u2022 "
+          + "Live tools, policy, guards, workflow, and fault handling";
   public static final String PERSONA_TAG = "demo persona, not authenticated";
 }

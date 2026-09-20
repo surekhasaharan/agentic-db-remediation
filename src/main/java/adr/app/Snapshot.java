@@ -42,6 +42,8 @@ public final class Snapshot {
 
   public static Map<String, Object> labels() {
     Map<String, Object> l = new LinkedHashMap<>();
+    l.put("product", Labels.PRODUCT);
+    l.put("tagline", Labels.TAGLINE);
     l.put("banner", Labels.BANNER);
     l.put("agent_mode", Labels.AGENT_MODE);
     l.put("target_mode", Labels.TARGET_MODE);

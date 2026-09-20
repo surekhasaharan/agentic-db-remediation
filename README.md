@@ -1,8 +1,10 @@
-# Agentic database remediation, D0 prototype
+# Agentic Database Security Remediation
+
+*From finding to verified recovery.* D0 prototype.
 
 A self-contained demonstration of an agentic PostgreSQL privilege remediation system: agents propose, deterministic code decides, a human approves, faults are injected and recovered from, verification and drift supervision run for real. One Java 21 process, Javalin, Jackson and a vanilla web page. No account, key, database or network access is needed.
 
-**Prototype: recorded agent responses, a simulated PostgreSQL target and demo personas. Tools, policy, guards, workflow and fault handling run live.** The banner on the page, the tags on every card, the source labels on every piece of evidence and the fields in the evidence export all say so.
+**Demo mode: Recorded agents • Simulated PostgreSQL target • Demo personas • Live tools, policy, guards, workflow, and fault handling.** The banner on the page, the tags on every card, the source labels on every piece of evidence and the fields in the evidence export all say so.
 
 ## Prerequisites
 

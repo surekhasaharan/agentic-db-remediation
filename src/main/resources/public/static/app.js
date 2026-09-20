@@ -266,6 +266,8 @@
 
   function renderHeader() {
     const s = state.snap;
+    $('product').textContent = s.labels.product;
+    $('tagline').textContent = s.labels.tagline;
     $('banner-text').textContent = s.labels.banner;
     const c = $('counters');
     clear(c);
