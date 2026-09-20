@@ -948,7 +948,11 @@
     sec('Seeded', ['Telemetry, job history, the audit feed, the knowledge corpus and the fleet grid are JSON resources loaded per session.']);
     sec('Live', ['Tool allowlists, argument validation, policy, plan hashing, approval binding, guards, the compare-and-set lease, the atomic commit with its ledger marker, outcome classification, reconciliation, verification checks, the drift poll and the bounded burst all execute for real on every run.',
       'State is lost on reset, expiry or restart by design. The timeline lives in memory.']);
-    sec('Proved by tests', ['duplicateDeliveryAppliesOnce (looped 100 times), lostResponseReconcilesWithoutSecondMutation, abortBeforeCommitLeavesNoTrace, statusWaitsForInFlightWrite, foreignToolAndExtraArgsRefused, approvalRules, completenessAndJustificationGuards, verdictGuardOverridesPass, driftDetectedAndReopened, reopenIsAtomic, recordingsCoverEveryRequiredTrigger, goldenFlowHasNoRecordingMiss, everythingSimulatedIsLabelled, burstIsBounded.']);
+    sec('Validated by automated tests', [
+      'Duplicate deliveries produce only one mutation, lost responses are reconciled safely, and aborted transactions leave no partial change.',
+      'Policy, approval, verification, drift recovery, and recording coverage are tested automatically.',
+      'The 5,000-finding burst is verified to remain within its queue and worker limits.',
+      'The complete test suite is available in the GitHub repository.']);
   }
 
   // ---- Boot ----
